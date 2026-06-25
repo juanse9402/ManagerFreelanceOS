@@ -1,14 +1,28 @@
 import React from 'react';
-import { X, Camera, MessageSquare, Clock, CheckCircle } from 'lucide-react';
+import { X, Camera, MessageSquare, Clock, CheckCircle, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface ContentDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   item: any | null;
+  onUpdate?: () => void;
 }
 
-export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, item }) => {
+export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, item, onUpdate }) => {
   if (!isOpen || !item) return null;
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this content?')) {
+      const { error } = await supabase.from('content_posts').delete().eq('id', item.id);
+      if (!error) {
+        if (onUpdate) onUpdate();
+        onClose();
+      } else {
+        alert('Error deleting content');
+      }
+    }
+  };
 
   return (
     <>
@@ -30,9 +44,14 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
             )}
             Revisión de Contenido
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <X size={20} className="text-gray-500" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button onClick={handleDelete} className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors" title="Delete">
+              <Trash2 size={18} />
+            </button>
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+              <X size={20} className="text-gray-500" />
+            </button>
+          </div>
         </div>
         
         <div className="p-6 overflow-y-auto h-[calc(100vh-140px)]">

@@ -134,7 +134,8 @@ export const CalendarView: React.FC = () => {
       <ContentDrawer 
         isOpen={!!selectedEvent} 
         onClose={() => setSelectedEvent(null)} 
-        item={selectedEvent} 
+        item={selectedEvent}
+        onUpdate={fetchEvents}
       />
     </div>
   );
