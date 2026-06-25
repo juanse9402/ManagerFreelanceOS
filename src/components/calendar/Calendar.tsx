@@ -2,19 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { ContentDrawer } from './ContentDrawer';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const CalendarView: React.FC = () => {
+  const { activeClientId } = useAuth();
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [activeClientId]);
 
   const fetchEvents = async () => {
+    if (!activeClientId) return;
+    
+    setLoading(true);
     try {
-      const { data, error } = await supabase.from('content_posts').select('*');
+      const { data, error } = await supabase
+        .from('content_posts')
+        .select('*')
+        .eq('client_id', activeClientId);
+        
       if (error) throw error;
       if (data) {
         setEvents(data);
@@ -27,17 +36,25 @@ export const CalendarView: React.FC = () => {
   };
 
   const handleCreateContent = async () => {
+    if (!activeClientId) {
+      alert("Please select a workspace client first.");
+      return;
+    }
+    
     const newContent = {
       title: 'New Content Post',
       type: 'Post',
       platform: 'Instagram',
       status: 'Draft',
-      date: '2026-06-15' // Default to today in our mock calendar
+      date: '2026-06-15', // Default to today in our mock calendar
+      client_id: activeClientId
     };
     
     const { data, error } = await supabase.from('content_posts').insert([newContent]).select();
     if (!error && data) {
       fetchEvents();
+    } else {
+      console.error("Error creating content:", error);
     }
   };
 

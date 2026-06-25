@@ -12,18 +12,19 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
-  const { role, profileName, session } = useAuth();
+  const { role, profileName, session, activeClientId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
+    if (!activeClientId) return;
+    
     setLoading(true);
-    // Because of RLS, clients will automatically only get their projects,
-    // and admins will get all projects.
     const { data, error } = await supabase
       .from('projects')
       .select('*')
+      .eq('client_id', activeClientId)
       .order('created_at', { ascending: false });
       
     if (data && !error) {
@@ -34,7 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
 
   useEffect(() => {
     fetchProjects();
-  }, [session]);
+  }, [session, activeClientId]);
 
   const activeProject = projects.length > 0 ? projects[0] : null;
 

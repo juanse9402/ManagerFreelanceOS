@@ -9,6 +9,9 @@ interface AuthContextType {
   role: 'admin' | 'client';
   status: 'pending' | 'approved' | 'rejected';
   profileName: string;
+  activeClientId: string | null;
+  setActiveClientId: (id: string | null) => void;
+  availableClients: any[];
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,7 +20,10 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   role: 'client',
   status: 'pending',
-  profileName: ''
+  profileName: '',
+  activeClientId: null,
+  setActiveClientId: () => {},
+  availableClients: []
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,6 +33,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'admin' | 'client'>('client');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [profileName, setProfileName] = useState('');
+  
+  // Workspace State
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [availableClients, setAvailableClients] = useState<any[]>([]);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -40,9 +50,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole(data.role as 'admin' | 'client');
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
         setProfileName(data.full_name || '');
+        
+        if (data.role === 'admin') {
+          fetchAvailableClients();
+        } else {
+          setActiveClientId(userId); // El cliente es su propio workspace
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const fetchAvailableClients = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'client')
+      .eq('status', 'approved');
+      
+    if (data && !error) {
+      setAvailableClients(data);
+      // Si es admin y no ha seleccionado cliente, pero hay clientes disponibles, auto-seleccionar el primero
+      if (!activeClientId && data.length > 0) {
+        setActiveClientId(data[0].id);
+      }
     }
   };
 
@@ -67,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setRole('client');
         setStatus('pending');
+        setActiveClientId(null);
       }
     });
 
@@ -74,7 +107,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, role, status, profileName }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      role, 
+      status, 
+      profileName,
+      activeClientId,
+      setActiveClientId,
+      availableClients
+    }}>
       {children}
     </AuthContext.Provider>
   );

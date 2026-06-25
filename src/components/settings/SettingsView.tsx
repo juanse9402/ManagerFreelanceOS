@@ -6,14 +6,64 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const { role } = useAuth();
+  const { role, activeClientId } = useAuth();
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({
+    instagram_connected: false,
+    tiktok_connected: false
+  });
 
   useEffect(() => {
     if (role === 'admin') {
       fetchProfiles();
     }
   }, [role]);
+
+  useEffect(() => {
+    if (activeClientId) {
+      fetchClientSettings();
+    }
+  }, [activeClientId]);
+
+  const fetchClientSettings = async () => {
+    const { data, error } = await supabase
+      .from('client_settings')
+      .select('*')
+      .eq('client_id', activeClientId)
+      .single();
+
+    if (data) {
+      setSettings(data);
+      if (data.theme_color) {
+        setTheme(data.theme_color as any);
+      }
+    } else {
+      // If no settings exist yet, create default
+      setSettings({ instagram_connected: false, tiktok_connected: false });
+    }
+  };
+
+  const updateSetting = async (key: string, value: any) => {
+    if (!activeClientId) return;
+    
+    // Optimistic UI update
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    
+    if (key === 'theme_color') {
+      setTheme(value);
+    }
+
+    const { error } = await supabase
+      .from('client_settings')
+      .upsert({ 
+        client_id: activeClientId, 
+        [key]: value,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'client_id' });
+      
+    if (error) console.error("Error updating settings:", error);
+  };
 
   const fetchProfiles = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -63,7 +113,7 @@ export const SettingsView: React.FC = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-3">Visual Theme (Simulation)</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button 
-                  onClick={() => setTheme('vibrante')}
+                  onClick={() => updateSetting('theme_color', 'vibrante')}
                   className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${theme === 'vibrante' ? 'border-[#8B5CF6] bg-[#8B5CF6]/5' : 'border-gray-100 hover:border-gray-200'}`}
                 >
                   <div className="flex space-x-2 mb-3">
@@ -76,7 +126,7 @@ export const SettingsView: React.FC = () => {
                 </button>
 
                 <button 
-                  onClick={() => setTheme('calido')}
+                  onClick={() => updateSetting('theme_color', 'calido')}
                   className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${theme === 'calido' ? 'border-[#E17055] bg-[#E17055]/5' : 'border-gray-100 hover:border-gray-200'}`}
                 >
                   <div className="flex space-x-2 mb-3">
@@ -89,7 +139,7 @@ export const SettingsView: React.FC = () => {
                 </button>
 
                 <button 
-                  onClick={() => setTheme('tecnologico')}
+                  onClick={() => updateSetting('theme_color', 'tecnologico')}
                   className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${theme === 'tecnologico' ? 'border-[#0984E3] bg-[#0984E3]/5' : 'border-gray-100 hover:border-gray-200'}`}
                 >
                   <div className="flex space-x-2 mb-3">
@@ -125,9 +175,24 @@ export const SettingsView: React.FC = () => {
                   </div>
                   <span className="font-medium text-sm">Instagram</span>
                 </div>
-                <span className="flex items-center text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full">
-                  <Check size={12} className="mr-1" /> Connected
-                </span>
+                {settings.instagram_connected ? (
+                  <button 
+                    onClick={() => updateSetting('instagram_connected', false)}
+                    className="flex items-center text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors group"
+                  >
+                    <Check size={12} className="mr-1 group-hover:hidden" /> 
+                    <X size={12} className="mr-1 hidden group-hover:block" /> 
+                    <span className="group-hover:hidden">Connected</span>
+                    <span className="hidden group-hover:inline">Disconnect</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => updateSetting('instagram_connected', true)}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
+                  >
+                    Connect
+                  </button>
+                )}
               </div>
               
               <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
@@ -137,9 +202,24 @@ export const SettingsView: React.FC = () => {
                   </div>
                   <span className="font-medium text-sm">TikTok</span>
                 </div>
-                <span className="flex items-center text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full">
-                  <Check size={12} className="mr-1" /> Connected
-                </span>
+                {settings.tiktok_connected ? (
+                  <button 
+                    onClick={() => updateSetting('tiktok_connected', false)}
+                    className="flex items-center text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors group"
+                  >
+                    <Check size={12} className="mr-1 group-hover:hidden" /> 
+                    <X size={12} className="mr-1 hidden group-hover:block" /> 
+                    <span className="group-hover:hidden">Connected</span>
+                    <span className="hidden group-hover:inline">Disconnect</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => updateSetting('tiktok_connected', true)}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
+                  >
+                    Connect
+                  </button>
+                )}
               </div>
               
               <button className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 font-medium hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors">
