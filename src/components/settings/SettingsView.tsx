@@ -1,9 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../theme/ThemeContext';
-import { Palette, Share2, Users, Check, Plus } from 'lucide-react';
+import { Palette, Share2, Users, Check, Plus, Shield, User, X } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  const { role } = useAuth();
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (role === 'admin') {
+      fetchProfiles();
+    }
+  }, [role]);
+
+  const fetchProfiles = async () => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (data) setProfiles(data);
+  };
+
+  const handleUpdateUser = async (id: string, newStatus: string, newRole: string) => {
+    await supabase.from('profiles').update({ status: newStatus, role: newRole }).eq('id', id);
+    fetchProfiles();
+  };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -129,35 +149,71 @@ export const SettingsView: React.FC = () => {
           </div>
 
           {/* Team & Permissions */}
-          <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-center mb-4 border-b border-gray-100 pb-3">
-              <div className="p-1.5 bg-purple-50 text-purple-600 rounded mr-2">
-                <Users size={16} />
-              </div>
-              <h2 className="font-bold text-[var(--text-primary)]">Team & Permissions</h2>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <img src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="Anna" className="w-8 h-8 rounded-full bg-gray-200" />
-                  <div>
-                    <p className="text-sm font-semibold">Anna Marketer</p>
-                    <p className="text-[10px] text-gray-500">Admin (Freelancer)</p>
-                  </div>
+          {role === 'admin' && (
+            <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)]">
+              <div className="flex items-center mb-4 border-b border-gray-100 pb-3">
+                <div className="p-1.5 bg-purple-50 text-purple-600 rounded mr-2">
+                  <Users size={16} />
                 </div>
+                <h2 className="font-bold text-[var(--text-primary)]">User Management</h2>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <img src="https://i.pravatar.cc/150?u=cliente" alt="Cliente" className="w-8 h-8 rounded-full bg-gray-200" />
-                  <div>
-                    <p className="text-sm font-semibold">Carlos (Cliente)</p>
-                    <p className="text-[10px] text-gray-500">Revisor</p>
+              
+              <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar">
+                {profiles.map(p => (
+                  <div key={p.id} className="flex flex-col space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs uppercase">
+                          {p.full_name?.substring(0, 2) || 'US'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">{p.full_name || 'No Name'}</p>
+                          <div className="flex items-center space-x-2 mt-0.5">
+                            <span className="text-[10px] uppercase font-bold text-gray-500">{p.role}</span>
+                            <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded-full font-bold ${
+                              p.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {p.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {p.status === 'pending' && (
+                      <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
+                        <button 
+                          onClick={() => handleUpdateUser(p.id, 'approved', 'client')}
+                          className="flex-1 flex items-center justify-center py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-md text-xs font-semibold transition-colors"
+                        >
+                          <User size={12} className="mr-1" /> Approve Client
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateUser(p.id, 'approved', 'admin')}
+                          className="flex items-center justify-center py-1.5 px-2 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/20 rounded-md text-xs font-semibold transition-colors"
+                          title="Approve as Admin"
+                        >
+                          <Shield size={12} />
+                        </button>
+                        <button 
+                          onClick={() => handleUpdateUser(p.id, 'rejected', 'client')}
+                          className="flex items-center justify-center py-1.5 px-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-xs font-semibold transition-colors"
+                          title="Reject User"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                ))}
+                {profiles.length === 0 && (
+                  <p className="text-xs text-gray-500 text-center">No users found.</p>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

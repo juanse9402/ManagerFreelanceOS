@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Mail, Lock, User, Briefcase, Activity } from 'lucide-react';
+import { Mail, Lock, User, Activity } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'admin' | 'client'>('client');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,12 +31,11 @@ export const LoginView: React.FC = () => {
           options: {
             data: {
               full_name: name,
-              role: role,
             }
           }
         });
         if (error) throw error;
-        setMessage('Check your email for the confirmation link.');
+        setMessage('Account created! Please wait for Admin approval to access the dashboard.');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -130,28 +128,6 @@ export const LoginView: React.FC = () => {
                 />
               </div>
             </div>
-
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Account Type</label>
-                <div className="mt-2 grid grid-cols-2 gap-3">
-                  <div 
-                    onClick={() => setRole('client')}
-                    className={`border rounded-lg p-3 flex flex-col items-center justify-center cursor-pointer transition-colors ${role === 'client' ? 'bg-[var(--brand-primary)]/5 border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                  >
-                    <User className="h-6 w-6 mb-1" />
-                    <span className="text-xs font-semibold uppercase">Client</span>
-                  </div>
-                  <div 
-                    onClick={() => setRole('admin')}
-                    className={`border rounded-lg p-3 flex flex-col items-center justify-center cursor-pointer transition-colors ${role === 'admin' ? 'bg-[var(--brand-primary)]/5 border-[var(--brand-primary)] text-[var(--brand-primary)]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                  >
-                    <Briefcase className="h-6 w-6 mb-1" />
-                    <span className="text-xs font-semibold uppercase">Freelancer</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div>
               <button
