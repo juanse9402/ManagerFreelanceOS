@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DndContext, 
   closestCorners, 
@@ -14,14 +14,7 @@ import { DayColumn } from './DayColumn';
 import { TaskCard } from './TaskCard';
 import type { TaskType } from './TaskCard';
 import { Plus, Filter } from 'lucide-react';
-
-const initialTasks: TaskType[] = [
-  { id: 't1', title: 'Design Carousel "SEO Myths"', category: 'Design', platform: 'Instagram', assignee: 'Anna', status: 'Pending', dayId: 'day-1' },
-  { id: 't2', title: 'Approve copy Reel Productivity', category: 'Copywriting', platform: 'Instagram', assignee: 'David', status: 'Pending', dayId: 'day-1' },
-  { id: 't3', title: 'Record TikTok Behind the Scenes', category: 'Production', platform: 'TikTok', assignee: 'Anna', status: 'Pending', dayId: 'day-2' },
-  { id: 't4', title: 'Review Q1 metrics campaign', category: 'Analytics', platform: 'Todas', assignee: 'Laura', status: 'Pending', dayId: 'day-3' },
-  { id: 't5', title: 'Schedule posts week 3', category: 'Publishing', platform: 'Instagram', assignee: 'Anna', status: 'Pending', dayId: 'day-4' },
-];
+import { supabase } from '../../lib/supabase';
 
 const days = [
   { id: 'day-1', title: 'Monday', date: '15 Jun', workload: 'high' as const },
@@ -34,8 +27,55 @@ const days = [
 ];
 
 export const TasksView: React.FC = () => {
-  const [tasks, setTasks] = useState<TaskType[]>(initialTasks);
+  const [tasks, setTasks] = useState<TaskType[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase.from('tasks').select('*');
+      if (error) throw error;
+      
+      if (data) {
+        const mappedTasks = data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          platform: 'Instagram', // Placeholder since it's not in DB yet
+          assignee: 'Anna', // Placeholder
+          status: t.status,
+          dayId: t.date || 'day-1' // We map date to dayId for the MVP
+        }));
+        setTasks(mappedTasks);
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTask = async () => {
+    const newTask = {
+      title: 'New Content Task',
+      category: 'Design',
+      status: 'pending',
+      date: 'day-1'
+    };
+    
+    const { data, error } = await supabase.from('tasks').insert([newTask]).select();
+    if (!error && data) {
+      fetchTasks();
+    }
+  };
+
+  const updateTaskDay = async (taskId: string, newDayId: string) => {
+    await supabase.from('tasks').update({ date: newDayId }).eq('id', taskId);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -58,7 +98,6 @@ export const TasksView: React.FC = () => {
     const isActiveTask = active.data.current?.type === 'Task';
     const isOverTask = over.data.current?.type === 'Task';
     
-    // Si movemos tarea sobre otra tarea
     if (isActiveTask && isOverTask) {
       setTasks((prev) => {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
@@ -67,19 +106,20 @@ export const TasksView: React.FC = () => {
         if (prev[activeIndex].dayId !== prev[overIndex].dayId) {
           const newTasks = [...prev];
           newTasks[activeIndex].dayId = prev[overIndex].dayId;
+          updateTaskDay(activeId, prev[overIndex].dayId);
           return arrayMove(newTasks, activeIndex, overIndex);
         }
         return arrayMove(prev, activeIndex, overIndex);
       });
     }
 
-    // Si movemos tarea sobre la columna vacía
-    const isOverColumn = over.data.current?.type === undefined; // droppable id = day-X
+    const isOverColumn = over.data.current?.type === undefined;
     if (isActiveTask && isOverColumn) {
       setTasks((prev) => {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
         const newTasks = [...prev];
         newTasks[activeIndex].dayId = String(overId);
+        updateTaskDay(activeId, String(overId));
         return arrayMove(newTasks, activeIndex, activeIndex); 
       });
     }
@@ -112,7 +152,10 @@ export const TasksView: React.FC = () => {
             <Filter size={16} />
             <span>Filters</span>
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 transition-colors">
+          <button 
+            onClick={handleCreateTask}
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 transition-colors"
+          >
             <Plus size={16} />
             <span>New Task</span>
           </button>
@@ -129,7 +172,9 @@ export const TasksView: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            {days.map(day => (
+            {loading ? (
+              <div className="flex w-full items-center justify-center text-gray-500 font-medium">Loading tasks from Supabase...</div>
+            ) : days.map(day => (
               <DayColumn 
                 key={day.id}
                 id={day.id}

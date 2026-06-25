@@ -26,7 +26,7 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Layout activeView={activeView} setActiveView={setActiveView} role={contextRole} setRole={() => {}}>
+      <Layout activeView={activeView} setActiveView={setActiveView} role={contextRole}>
         {activeView === 'dashboard' && <Dashboard setActiveView={setActiveView} />}
         {activeView === 'calendar' && <CalendarView />}
         {activeView === 'tasks' && <TasksView />}

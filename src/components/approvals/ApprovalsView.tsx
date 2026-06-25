@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Search, Filter, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { ContentDrawer } from '../calendar/ContentDrawer';
-
-const mockApprovals = [
-  { id: 1, title: 'Reel: Productivity Tips', date: '2026-06-15', platform: 'Instagram', status: 'In Review', type: 'Reel' },
-  { id: 2, title: 'Carousel: SEO Myths', date: '2026-06-18', platform: 'Instagram', status: 'In Review', type: 'Post' },
-  { id: 3, title: 'TikTok: Behind the Scenes', date: '2026-06-20', platform: 'TikTok', status: 'Pending', type: 'Video' },
-  { id: 4, title: 'Story: Flash Promo', date: '2026-06-25', platform: 'Instagram', status: 'Approved', type: 'Story' },
-];
+import { supabase } from '../../lib/supabase';
 
 export const ApprovalsView: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [approvals, setApprovals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchApprovals();
+  }, []);
+
+  const fetchApprovals = async () => {
+    try {
+      const { data, error } = await supabase.from('content_posts').select('*');
+      if (error) throw error;
+      if (data) {
+        setApprovals(data);
+      }
+    } catch (error) {
+      console.error('Error fetching approvals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -48,7 +62,15 @@ export const ApprovalsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {mockApprovals.map((item) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Loading content...</td>
+                </tr>
+              ) : approvals.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No content found in Supabase.</td>
+                </tr>
+              ) : approvals.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
@@ -83,7 +105,8 @@ export const ApprovalsView: React.FC = () => {
                     }`}>
                       {item.status === 'Approved' && <CheckCircle size={12} className="mr-1" />}
                       {item.status === 'In Review' && <Clock size={12} className="mr-1" />}
-                      {item.status === 'Pending' && <XCircle size={12} className="mr-1" />}
+                      {item.status === 'Draft' && <XCircle size={12} className="mr-1" />}
+                      {item.status === 'Pending' && <Clock size={12} className="mr-1" />}
                       {item.status}
                     </span>
                   </td>

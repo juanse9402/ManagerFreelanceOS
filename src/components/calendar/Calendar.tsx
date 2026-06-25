@@ -1,17 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { ContentDrawer } from './ContentDrawer';
-
-// Mock data
-const mockEvents = [
-  { id: 1, title: 'Reel: Productivity Tips', date: '2026-06-15', platform: 'Instagram', status: 'Approved', type: 'Reel' },
-  { id: 2, title: 'Carousel: SEO Myths', date: '2026-06-18', platform: 'Instagram', status: 'In Review', type: 'Post' },
-  { id: 3, title: 'TikTok: Behind the Scenes', date: '2026-06-20', platform: 'TikTok', status: 'Pending', type: 'Video' },
-  { id: 4, title: 'Story: Flash Promo', date: '2026-06-25', platform: 'Instagram', status: 'Pending', type: 'Story' },
-];
+import { supabase } from '../../lib/supabase';
 
 export const CalendarView: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase.from('content_posts').select('*');
+      if (error) throw error;
+      if (data) {
+        setEvents(data);
+      }
+    } catch (error) {
+      console.error('Error fetching content posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateContent = async () => {
+    const newContent = {
+      title: 'New Content Post',
+      type: 'Post',
+      platform: 'Instagram',
+      status: 'Draft',
+      date: '2026-06-15' // Default to today in our mock calendar
+    };
+    
+    const { data, error } = await supabase.from('content_posts').insert([newContent]).select();
+    if (!error && data) {
+      fetchEvents();
+    }
+  };
 
   // Generamos una grilla simple de 35 días para el mock
   const days = Array.from({ length: 35 }, (_, i) => i + 1 - 4); // Empieza en negativo para padding de mes anterior
@@ -31,7 +59,10 @@ export const CalendarView: React.FC = () => {
             <button className="px-3 py-1.5 text-sm font-medium bg-gray-100 rounded-md text-gray-800">Month</button>
             <button className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-800">Week</button>
           </div>
-          <button className="flex items-center space-x-2 px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 shadow-sm transition-colors">
+          <button 
+            onClick={handleCreateContent}
+            className="flex items-center space-x-2 px-4 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 shadow-sm transition-colors"
+          >
             <Plus size={16} />
             <span className="hidden sm:inline">New Content</span>
           </button>
@@ -49,15 +80,23 @@ export const CalendarView: React.FC = () => {
           ))}
         </div>
         
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10 backdrop-blur-sm">
+            <span className="text-[var(--brand-primary)] font-medium">Loading calendar data...</span>
+          </div>
+        )}
+        
         {/* Celdas de días */}
-        <div className="grid grid-cols-7 flex-1 gap-1">
+        <div className="grid grid-cols-7 flex-1 gap-1 relative">
           {days.map((dayNum, i) => {
             const isCurrentMonth = dayNum > 0 && dayNum <= 30;
             const displayDay = dayNum > 30 ? dayNum - 30 : dayNum <= 0 ? 31 + dayNum : dayNum;
             const isToday = dayNum === 15; // Mock "today"
             
-            // Encontrar eventos mockeados para este día
-            const dayEvents = isCurrentMonth ? mockEvents.filter(e => e.date.endsWith(`-${dayNum.toString().padStart(2, '0')}`)) : [];
+            // Encontrar eventos para este día
+            const dayEvents = isCurrentMonth 
+              ? events.filter(e => e.date && e.date.endsWith(`-${dayNum.toString().padStart(2, '0')}`)) 
+              : [];
 
             return (
               <div 
