@@ -1,14 +1,14 @@
 import React from 'react';
-import { Bell, Search, UserCircle2 } from 'lucide-react';
+import { Bell, Search, LogOut } from 'lucide-react';
 import { useTheme } from '../../theme/ThemeContext';
 import type { UserRole } from '../../App';
+import { supabase } from '../../lib/supabase';
 
 interface HeaderProps {
   role: UserRole;
-  setRole: (role: UserRole) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ role, setRole }) => {
+export const Header: React.FC<HeaderProps> = ({ role }) => {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -25,14 +25,14 @@ export const Header: React.FC<HeaderProps> = ({ role, setRole }) => {
       </div>
 
       <div className="flex items-center space-x-3 sm:space-x-4">
-        {/* Role Switcher */}
+        {/* Log Out Button */}
         <button 
-          onClick={() => setRole(role === 'admin' ? 'client' : 'admin')}
+          onClick={async () => await supabase.auth.signOut()}
           className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-semibold text-gray-700 transition-colors"
-          title="Simulate view"
+          title="Sign out"
         >
-          <UserCircle2 size={14} />
-          <span>View: {role === 'admin' ? 'Admin' : 'Client'}</span>
+          <LogOut size={14} />
+          <span>Log out ({role})</span>
         </button>
 
         <div className="flex items-center space-x-2 bg-gray-50 rounded-full p-1 border border-gray-100">

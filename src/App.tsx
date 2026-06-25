@@ -7,16 +7,26 @@ import { TasksView } from './components/tasks/TasksView';
 import { PreviewView } from './components/preview/PreviewView';
 import { SettingsView } from './components/settings/SettingsView';
 import { ApprovalsView } from './components/approvals/ApprovalsView';
+import { useAuth } from './contexts/AuthContext';
+import { LoginView } from './components/auth/LoginView';
 
 export type UserRole = 'admin' | 'client';
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
-  const [role, setRole] = useState<UserRole>('admin');
+  const { session, loading, role: contextRole } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-medium text-sm">Cargando...</div>;
+  }
+
+  if (!session) {
+    return <LoginView />;
+  }
 
   return (
     <ThemeProvider>
-      <Layout activeView={activeView} setActiveView={setActiveView} role={role} setRole={setRole}>
+      <Layout activeView={activeView} setActiveView={setActiveView} role={contextRole} setRole={() => {}}>
         {activeView === 'dashboard' && <Dashboard setActiveView={setActiveView} />}
         {activeView === 'calendar' && <CalendarView />}
         {activeView === 'tasks' && <TasksView />}
