@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../theme/ThemeContext';
-import { Palette, Share2, Users, Check, Plus, Globe } from 'lucide-react';
+import { Palette, Share2, Users, Check, Plus } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();

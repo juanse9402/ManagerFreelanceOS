@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, TrendingUp, CheckCircle, Clock } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 export const ProjectProgress: React.FC = () => {
   const currentProgress = 65; // Mock data

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Filter, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ContentDrawer } from './ContentDrawer';
 
 // Mock data
@@ -9,8 +9,6 @@ const mockEvents = [
   { id: 3, title: 'TikTok: Behind the Scenes', date: '2026-06-20', platform: 'TikTok', status: 'Pending', type: 'Video' },
   { id: 4, title: 'Story: Flash Promo', date: '2026-06-25', platform: 'Instagram', status: 'Pending', type: 'Story' },
 ];
-
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const CalendarView: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);

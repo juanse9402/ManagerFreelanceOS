@@ -15,7 +15,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Grid, Play, Layers } from 'lucide-react';
+import { Play, Layers } from 'lucide-react';
 
 interface FeedItemProps {
   item: any;
