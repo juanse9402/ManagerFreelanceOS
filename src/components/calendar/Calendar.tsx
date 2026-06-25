@@ -45,7 +45,7 @@ export const CalendarView: React.FC = () => {
   const days = Array.from({ length: 35 }, (_, i) => i + 1 - 4); // Empieza en negativo para padding de mes anterior
 
   return (
-    <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)] flex flex-col h-[calc(100vh-120px)]">
+    <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)] flex flex-col min-h-[calc(100vh-120px)] h-full">
       
       {/* Header del Calendario */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
