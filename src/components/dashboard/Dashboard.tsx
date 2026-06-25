@@ -3,7 +3,11 @@ import { ProjectProgress } from './ProjectProgress';
 import { TaskSummary } from './TaskSummary';
 import { NextContentPreview } from './NextContentPreview';
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  setActiveView: (view: string) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -14,7 +18,7 @@ export const Dashboard: React.FC = () => {
       {/* Top row: Progress & Tasks Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ProjectProgress />
-        <TaskSummary />
+        <TaskSummary onNavigateToTasks={() => setActiveView('tasks')} />
       </div>
       
       {/* Bottom row: Next content preview & Recent Activity (Placeholder) */}

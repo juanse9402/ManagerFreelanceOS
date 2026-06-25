@@ -1,7 +1,11 @@
 import React from 'react';
 import { LayoutDashboard, CheckSquare, Clock, AlertCircle, TrendingUp } from 'lucide-react';
 
-export const TaskSummary: React.FC = () => {
+interface TaskSummaryProps {
+  onNavigateToTasks?: () => void;
+}
+
+export const TaskSummary: React.FC<TaskSummaryProps> = ({ onNavigateToTasks }) => {
   const stats = [
     { label: 'Completed', value: 12, icon: <CheckSquare size={20} className="text-green-500" />, color: 'bg-green-50 text-green-700 border-green-100' },
     { label: 'In Progress', value: 5, icon: <Clock size={20} className="text-[var(--brand-accent)]" />, color: 'bg-amber-50 text-amber-700 border-amber-100' },
@@ -20,7 +24,12 @@ export const TaskSummary: React.FC = () => {
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <div key={index} className={`p-4 rounded-xl border ${stat.color} flex flex-col items-start`}>
+          <div 
+            key={index} 
+            onClick={onNavigateToTasks}
+            className={`p-4 rounded-xl border ${stat.color} flex flex-col items-start cursor-pointer hover:shadow-md hover:scale-105 transition-all active:scale-95`}
+            title="Go to Tasks module"
+          >
             <div className="bg-white p-2 rounded-lg shadow-sm mb-3">
               {stat.icon}
             </div>

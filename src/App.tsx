@@ -17,7 +17,7 @@ function App() {
   return (
     <ThemeProvider>
       <Layout activeView={activeView} setActiveView={setActiveView} role={role} setRole={setRole}>
-        {activeView === 'dashboard' && <Dashboard />}
+        {activeView === 'dashboard' && <Dashboard setActiveView={setActiveView} />}
         {activeView === 'calendar' && <CalendarView />}
         {activeView === 'tasks' && <TasksView />}
         {activeView === 'preview' && <PreviewView />}
