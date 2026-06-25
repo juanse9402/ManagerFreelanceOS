@@ -1,31 +1,40 @@
 import React from 'react';
-import { Target } from 'lucide-react';
+import { Target, Building } from 'lucide-react';
 
-export const ProjectProgress: React.FC = () => {
-  const currentProgress = 65; // Mock data
-  const currentPhase = 'Review';
+interface ProjectProgressProps {
+  project?: any;
+  loading?: boolean;
+}
+
+export const ProjectProgress: React.FC<ProjectProgressProps> = ({ project, loading }) => {
+  const currentProgress = project ? project.progress : 0;
+  const currentPhase = project ? project.status : 'No Active Project';
   
   const phases = [
-    { name: 'Strategy', limit: 20 },
-    { name: 'Production', limit: 60 },
-    { name: 'Review', limit: 80 },
+    { name: 'Planning', limit: 0 },
+    { name: 'Strategy', limit: 25 },
+    { name: 'Production', limit: 50 },
+    { name: 'Review', limit: 75 },
     { name: 'Publishing', limit: 100 },
   ];
 
   return (
-    <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)]">
-      <div className="flex justify-between items-end mb-6">
+    <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)] flex flex-col justify-between">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
           <h2 className="text-lg font-bold text-[var(--text-primary)]">Overall Progress</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Monthly Campaign: June 2026</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1 flex items-center">
+            <Building size={14} className="mr-1" />
+            {loading ? 'Loading...' : project ? project.name : 'No projects yet'}
+          </p>
         </div>
-        <div className="flex items-center space-x-2 bg-[var(--brand-primary)]/10 px-3 py-1.5 rounded-full">
+        <div className="flex items-center space-x-2 bg-[var(--brand-primary)]/10 px-3 py-1.5 rounded-full shrink-0">
           <Target size={16} className="text-[var(--brand-primary)]" />
-          <span className="font-semibold text-sm text-[var(--brand-primary)]">Current Phase: {currentPhase}</span>
+          <span className="font-semibold text-xs sm:text-sm text-[var(--brand-primary)]">Phase: {currentPhase}</span>
         </div>
       </div>
 
-      <div className="relative pt-1">
+      <div className="relative pt-1 mt-auto">
         <div className="flex mb-2 items-center justify-between">
           <div>
             <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-[var(--brand-primary)] bg-[var(--brand-primary)]/10">
@@ -48,9 +57,9 @@ export const ProjectProgress: React.FC = () => {
         </div>
         
         {/* Phase Labels */}
-        <div className="flex justify-between text-xs text-gray-400 font-medium px-1">
+        <div className="flex justify-between text-[10px] sm:text-xs text-gray-400 font-medium px-1 overflow-x-auto custom-scrollbar pb-1">
           {phases.map((phase, idx) => (
-            <div key={idx} className={`text-center ${currentProgress >= phase.limit - 10 ? 'text-[var(--brand-primary)]' : ''}`}>
+            <div key={idx} className={`text-center px-1 ${currentProgress >= phase.limit ? 'text-[var(--brand-primary)]' : ''}`}>
               {phase.name}
             </div>
           ))}
