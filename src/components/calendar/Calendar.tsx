@@ -15,7 +15,10 @@ export const CalendarView: React.FC = () => {
   }, [activeClientId]);
 
   const fetchEvents = async () => {
-    if (!activeClientId) return;
+    if (!activeClientId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {

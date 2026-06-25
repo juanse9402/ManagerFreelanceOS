@@ -35,7 +35,10 @@ export const TasksView: React.FC = () => {
   }, [activeClientId]);
 
   const fetchTasks = async () => {
-    if (!activeClientId) return;
+    if (!activeClientId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {

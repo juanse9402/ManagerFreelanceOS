@@ -18,7 +18,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
-    if (!activeClientId) return;
+    if (!activeClientId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     const { data, error } = await supabase
