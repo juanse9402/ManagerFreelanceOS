@@ -182,7 +182,7 @@ export const SettingsView: React.FC = () => {
                       </div>
                     </div>
 
-                    {p.status === 'pending' && (
+                    {p.status === 'pending' ? (
                       <div className="flex items-center space-x-2 pt-2 border-t border-gray-200">
                         <button 
                           onClick={() => handleUpdateUser(p.id, 'approved', 'client')}
@@ -203,6 +203,31 @@ export const SettingsView: React.FC = () => {
                           title="Reject User"
                         >
                           <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-end space-x-3 pt-2 border-t border-gray-200">
+                        {p.role === 'client' ? (
+                          <button 
+                            onClick={() => handleUpdateUser(p.id, 'approved', 'admin')}
+                            className="flex items-center text-[10px] uppercase font-bold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]/70 transition-colors"
+                          >
+                            <Shield size={10} className="mr-1" /> Hacer Admin
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleUpdateUser(p.id, 'approved', 'client')}
+                            className="flex items-center text-[10px] uppercase font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            <User size={10} className="mr-1" /> Hacer Cliente
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleUpdateUser(p.id, 'rejected', p.role)}
+                          className="flex items-center text-[10px] uppercase font-bold text-red-500 hover:text-red-700 transition-colors"
+                          title="Revocar acceso"
+                        >
+                          <X size={10} className="mr-1" /> Revocar
                         </button>
                       </div>
                     )}
