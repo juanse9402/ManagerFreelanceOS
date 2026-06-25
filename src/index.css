@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-surface: var(--surface);
+  --color-background: var(--background);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --radius-card: var(--radius-card);
+  --shadow-card: var(--shadow-card);
+}
+
+:root {
+  /* Tema por defecto: Vibrante (Default) */
+  --brand-primary: #8B5CF6; /* Violeta */
+  --brand-secondary: #C4B5FD;
+  --brand-accent: #F59E0B; /* Ámbar */
+  
+  --surface: #FFFFFF;
+  --background: #F4F6F9;
+  --text-primary: #1A1A2E;
+  --text-muted: #6B7280;
+  
+  --radius-card: 12px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.07);
+}
+
+/* Tema: Cálido (Moda / Lifestyle) */
+[data-theme='calido'] {
+  --brand-primary: #E17055; /* Naranja Terracota */
+  --brand-secondary: #FAB1A0;
+  --brand-accent: #00CEC9; /* Verde menta para contraste */
+}
+
+/* Tema: Tecnológico (Frío / Minimalista) */
+[data-theme='tecnologico'] {
+  --brand-primary: #0984E3; /* Azul eléctrico */
+  --brand-secondary: #74B9FF;
+  --brand-accent: #FD79A8; /* Rosa neón para contraste */
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
