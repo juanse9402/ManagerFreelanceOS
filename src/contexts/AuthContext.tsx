@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   role: 'admin' | 'client';
   status: 'pending' | 'approved' | 'rejected';
+  profileName: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -15,7 +16,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   role: 'client',
-  status: 'pending'
+  status: 'pending',
+  profileName: ''
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -24,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<'admin' | 'client'>('client');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [profileName, setProfileName] = useState('');
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -36,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && !error) {
         setRole(data.role as 'admin' | 'client');
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
+        setProfileName(data.full_name || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -70,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, role, status }}>
+    <AuthContext.Provider value={{ session, user, loading, role, status, profileName }}>
       {children}
     </AuthContext.Provider>
   );

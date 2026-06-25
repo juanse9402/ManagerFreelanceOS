@@ -1,76 +1,78 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  CheckSquare, 
-  MonitorPlay, 
-  MessageSquare, 
-  Settings 
-} from 'lucide-react';
-import type { UserRole } from '../../App';
+import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   activeView: string;
   setActiveView: (view: string) => void;
-  role: UserRole;
+  role: 'admin' | 'client';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, role }) => {
-  const allNavItems = [
-    { id: 'dashboard', name: 'Dashboard', icon: <LayoutDashboard size={20} />, roles: ['admin', 'client'] },
-    { id: 'calendar', name: 'Calendar', icon: <Calendar size={20} />, roles: ['admin', 'client'] },
-    { id: 'tasks', name: 'Tasks', icon: <CheckSquare size={20} />, roles: ['admin'] },
-    { id: 'preview', name: 'Preview & Feed', icon: <MonitorPlay size={20} />, roles: ['admin', 'client'] },
-    { id: 'approvals', name: 'Approvals', icon: <MessageSquare size={20} />, roles: ['admin', 'client'] },
-    { id: 'settings', name: 'Settings', icon: <Settings size={20} />, roles: ['admin'] },
+  const { profileName } = useAuth();
+  
+  const menuItems = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'calendar', icon: Calendar, label: 'Calendar' },
+    { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
+    { id: 'preview', icon: Image, label: 'Preview & Feed' },
+    { id: 'approvals', icon: CheckCircle, label: 'Approvals' },
+    { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
-  const navItems = allNavItems.filter(item => item.roles.includes(role));
+  const filteredMenu = role === 'client' 
+    ? menuItems.filter(item => ['dashboard', 'preview', 'approvals', 'settings'].includes(item.id))
+    : menuItems;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-full shrink-0 shadow-sm hidden md:flex">
-      <div className="h-16 flex items-center px-6 border-b border-gray-100">
-        <div className="w-8 h-8 rounded bg-[var(--brand-primary)] flex items-center justify-center text-white font-bold text-xl mr-3 shadow-[var(--shadow-card)]">
-          F
+    <div className="w-64 bg-white border-r border-gray-100 flex flex-col font-sans h-full shadow-sm z-10 hidden md:flex">
+      <div className="h-16 flex items-center px-6 border-b border-gray-100 shrink-0">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-to-tr from-[var(--brand-primary)] to-[var(--brand-accent)] rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            F
+          </div>
+          <span className="font-bold text-xl tracking-tight text-[var(--text-primary)]">FreelanceOS</span>
         </div>
-        <span className="font-bold text-[var(--text-primary)] text-lg tracking-tight">FreelanceOS</span>
       </div>
       
-      <nav className="flex-1 py-6 px-4 space-y-1">
-        <p className="px-2 text-xs font-semibold text-gray-400 mb-4 tracking-wider uppercase">Main Menu</p>
-        {navItems.map((item) => {
-          const isActive = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-medium' 
-                  : 'text-[var(--text-muted)] hover:bg-gray-50 hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <span className={isActive ? 'text-[var(--brand-primary)]' : 'text-gray-400'}>
-                {item.icon}
-              </span>
-              <span>{item.name}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-2">Main Menu</p>
+        <nav className="space-y-1.5">
+          {filteredMenu.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+                  isActive 
+                    ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-semibold' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <Icon size={18} className={isActive ? 'text-[var(--brand-primary)]' : 'text-gray-400 group-hover:text-gray-600 transition-colors'} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center space-x-3 px-3 py-2">
-          <div className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-            <img src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="User Avatar" className="w-full h-full object-cover" />
+      <div className="shrink-0 p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="flex items-center space-x-3 p-3 rounded-xl bg-white border border-gray-100 shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] flex items-center justify-center font-bold text-sm uppercase shrink-0">
+            {profileName?.substring(0, 2) || 'US'}
           </div>
-          <div className="flex flex-col text-left overflow-hidden">
-            <span className="text-sm font-semibold text-[var(--text-primary)] truncate">Anna Marketer</span>
-            <span className="text-xs text-[var(--text-muted)] truncate">Pro Plan</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 truncate" title={profileName || 'User'}>
+              {profileName || 'Loading...'}
+            </p>
+            <p className="text-xs text-gray-500 capitalize truncate">{role === 'admin' ? 'Pro Plan (Admin)' : 'Client Account'}</p>
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 };
-
