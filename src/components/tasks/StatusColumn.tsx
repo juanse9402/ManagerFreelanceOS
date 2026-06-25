@@ -4,36 +4,26 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskCard } from './TaskCard';
 import type { TaskType } from './TaskCard';
 
-interface DayColumnProps {
+interface StatusColumnProps {
   id: string;
   title: string;
-  date: string;
   tasks: TaskType[];
-  workload: 'low' | 'medium' | 'high';
+  color: string;
 }
 
-export const DayColumn: React.FC<DayColumnProps> = ({ id, title, date, tasks, workload }) => {
+export const StatusColumn: React.FC<StatusColumnProps> = ({ id, title, tasks, color }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50 rounded-xl border border-gray-100 shrink-0 w-[280px]">
+    <div className="flex flex-col h-full bg-gray-50/50 rounded-xl border border-gray-100 shrink-0 w-[300px]">
       {/* Column Header */}
-      <div className="p-3 border-b border-gray-100 bg-white rounded-t-xl">
+      <div className={`p-3 border-b border-gray-100 bg-white rounded-t-xl border-t-4 ${color}`}>
         <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-[var(--text-primary)]">{title}</h3>
-        <span className="text-xs text-[var(--text-muted)] font-medium">{date}</span>
-      </div>
-      
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-          {tasks.length} tasks
-        </span>
-        <div className={`w-2 h-2 rounded-full ${
-          workload === 'high' ? 'bg-red-500' :
-          workload === 'medium' ? 'bg-amber-500' :
-          'bg-green-500'
-        }`} title={`Workload: ${workload}`}></div>
-      </div>
+          <h3 className="font-bold text-[var(--text-primary)]">{title}</h3>
+          <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            {tasks.length}
+          </span>
+        </div>
       </div>
       
       {/* Droppable Area */}

@@ -1,16 +1,15 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Camera, GripVertical } from 'lucide-react';
+import { GripVertical, Clock, CheckCircle } from 'lucide-react';
 
 export interface TaskType {
   id: string;
   title: string;
-  category: string;
-  platform: string;
-  assignee: string;
+  description: string;
+  priority: string;
   status: string;
-  dayId: string;
+  client_id: string;
 }
 
 interface TaskCardProps {
@@ -32,13 +31,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     transition,
   };
 
-  const getCategoryColor = (cat: string) => {
-    switch (cat) {
-      case 'Design': return 'bg-blue-100 text-blue-700';
-      case 'Copywriting': return 'bg-amber-100 text-amber-700';
-      case 'Publishing': return 'bg-green-100 text-green-700';
-      case 'Analytics': return 'bg-purple-100 text-purple-700';
-      case 'Production': return 'bg-rose-100 text-rose-700';
+  const getPriorityColor = (p: string) => {
+    switch (p) {
+      case 'high': return 'bg-red-100 text-red-700';
+      case 'medium': return 'bg-amber-100 text-amber-700';
+      case 'low': return 'bg-green-100 text-green-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -47,12 +44,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white p-3 rounded-lg border shadow-sm mb-3 group flex flex-col gap-2 relative ${
-        isDragging ? 'opacity-50 border-[var(--brand-primary)]' : 'border-gray-200 hover:border-gray-300'
+      className={`bg-white p-4 rounded-lg border shadow-sm mb-3 group flex flex-col gap-3 relative ${
+        isDragging ? 'opacity-50 border-[var(--brand-primary)]' : 'border-gray-200 hover:border-gray-300 hover:shadow'
       }`}
     >
       <div 
-        className="absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1"
+        className="absolute top-2 right-2 text-gray-400 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1 bg-gray-50 rounded"
         {...attributes}
         {...listeners}
       >
@@ -60,25 +57,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       </div>
 
       <div className="flex items-center gap-2 pr-6">
-        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getCategoryColor(task.category)}`}>
-          {task.category}
+        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
+          {task.priority} Priority
         </span>
-        {task.platform === 'Instagram' && <Camera size={12} className="text-pink-600" />}
-        {task.platform === 'TikTok' && <span className="font-bold bg-black text-white px-1 py-0.5 rounded text-[8px]">TT</span>}
       </div>
       
-      <p className="font-semibold text-sm text-[var(--text-primary)] leading-snug">{task.title}</p>
+      <div>
+        <p className="font-bold text-sm text-[var(--text-primary)] leading-snug">{task.title}</p>
+        {task.description && (
+          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+        )}
+      </div>
       
-      <div className="flex items-center justify-between mt-1">
-        <div className="flex items-center space-x-1.5">
-          <div className="w-5 h-5 rounded-full bg-gray-200 overflow-hidden">
-            <img src={`https://i.pravatar.cc/150?u=${task.assignee}`} alt={task.assignee} className="w-full h-full object-cover" />
-          </div>
-          <span className="text-[10px] text-[var(--text-muted)] font-medium truncate max-w-[60px]">{task.assignee}</span>
-        </div>
-        
-        <div className="flex items-center">
-          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]" />
+      <div className="flex items-center justify-between mt-1 pt-3 border-t border-gray-50">
+        <div className="flex items-center space-x-1 text-xs text-gray-400 font-medium">
+          {task.status === 'done' ? (
+            <><CheckCircle size={14} className="text-green-500" /> <span className="text-green-600">Completed</span></>
+          ) : (
+            <><Clock size={14} /> <span>Active</span></>
+          )}
         </div>
       </div>
     </div>

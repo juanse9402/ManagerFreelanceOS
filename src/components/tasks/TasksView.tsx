@@ -10,47 +10,44 @@ import {
   defaultDropAnimationSideEffects
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import { DayColumn } from './DayColumn';
+import { StatusColumn } from './StatusColumn';
 import { TaskCard } from './TaskCard';
 import type { TaskType } from './TaskCard';
 import { Plus, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
-const days = [
-  { id: 'day-1', title: 'Monday', date: '15 Jun', workload: 'high' as const },
-  { id: 'day-2', title: 'Tuesday', date: '16 Jun', workload: 'low' as const },
-  { id: 'day-3', title: 'Wednesday', date: '17 Jun', workload: 'medium' as const },
-  { id: 'day-4', title: 'Thursday', date: '18 Jun', workload: 'low' as const },
-  { id: 'day-5', title: 'Friday', date: '19 Jun', workload: 'medium' as const },
-  { id: 'day-6', title: 'Saturday', date: '20 Jun', workload: 'low' as const },
-  { id: 'day-7', title: 'Sunday', date: '21 Jun', workload: 'low' as const },
+const columns = [
+  { id: 'todo', title: 'To Do', color: 'border-t-gray-400' },
+  { id: 'in_progress', title: 'In Progress', color: 'border-t-blue-500' },
+  { id: 'review', title: 'In Review', color: 'border-t-amber-500' },
+  { id: 'done', title: 'Done', color: 'border-t-green-500' },
 ];
 
 export const TasksView: React.FC = () => {
+  const { activeClientId } = useAuth();
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [activeClientId]);
 
   const fetchTasks = async () => {
+    if (!activeClientId) return;
+    
+    setLoading(true);
     try {
-      const { data, error } = await supabase.from('tasks').select('*');
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('client_id', activeClientId);
+        
       if (error) throw error;
       
       if (data) {
-        const mappedTasks = data.map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          category: t.category,
-          platform: 'Instagram', // Placeholder since it's not in DB yet
-          assignee: 'Anna', // Placeholder
-          status: t.status,
-          dayId: t.date || 'day-1' // We map date to dayId for the MVP
-        }));
-        setTasks(mappedTasks);
+        setTasks(data);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -60,11 +57,17 @@ export const TasksView: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
+    if (!activeClientId) {
+      alert("Please select a workspace client first.");
+      return;
+    }
+    
     const newTask = {
-      title: 'New Content Task',
-      category: 'Design',
-      status: 'pending',
-      date: 'day-1'
+      title: 'New Important Task',
+      description: 'Describe the task requirements here...',
+      status: 'todo',
+      priority: 'medium',
+      client_id: activeClientId
     };
     
     const { data, error } = await supabase.from('tasks').insert([newTask]).select();
@@ -73,8 +76,8 @@ export const TasksView: React.FC = () => {
     }
   };
 
-  const updateTaskDay = async (taskId: string, newDayId: string) => {
-    await supabase.from('tasks').update({ date: newDayId }).eq('id', taskId);
+  const updateTaskStatus = async (taskId: string, newStatus: string) => {
+    await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId);
   };
 
   const sensors = useSensors(
@@ -103,10 +106,10 @@ export const TasksView: React.FC = () => {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
         const overIndex = prev.findIndex((t) => t.id === overId);
         
-        if (prev[activeIndex].dayId !== prev[overIndex].dayId) {
+        if (prev[activeIndex].status !== prev[overIndex].status) {
           const newTasks = [...prev];
-          newTasks[activeIndex].dayId = prev[overIndex].dayId;
-          updateTaskDay(activeId, prev[overIndex].dayId);
+          newTasks[activeIndex].status = prev[overIndex].status;
+          updateTaskStatus(activeId, prev[overIndex].status);
           return arrayMove(newTasks, activeIndex, overIndex);
         }
         return arrayMove(prev, activeIndex, overIndex);
@@ -118,8 +121,8 @@ export const TasksView: React.FC = () => {
       setTasks((prev) => {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
         const newTasks = [...prev];
-        newTasks[activeIndex].dayId = String(overId);
-        updateTaskDay(activeId, String(overId));
+        newTasks[activeIndex].status = String(overId);
+        updateTaskStatus(activeId, String(overId));
         return arrayMove(newTasks, activeIndex, activeIndex); 
       });
     }
@@ -145,7 +148,10 @@ export const TasksView: React.FC = () => {
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 shrink-0">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Weekly Tasks</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Tasks Board</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Manage project tasks and track progress.</p>
+        </div>
         
         <div className="flex space-x-2 w-full sm:w-auto">
           <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
@@ -154,7 +160,7 @@ export const TasksView: React.FC = () => {
           </button>
           <button 
             onClick={handleCreateTask}
-            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 transition-colors shadow-sm"
           >
             <Plus size={16} />
             <span>New Task</span>
@@ -173,15 +179,14 @@ export const TasksView: React.FC = () => {
             onDragEnd={handleDragEnd}
           >
             {loading ? (
-              <div className="flex w-full items-center justify-center text-gray-500 font-medium">Loading tasks from Supabase...</div>
-            ) : days.map(day => (
-              <DayColumn 
-                key={day.id}
-                id={day.id}
-                title={day.title}
-                date={day.date}
-                workload={day.workload}
-                tasks={tasks.filter(t => t.dayId === day.id)}
+              <div className="flex w-full items-center justify-center text-gray-500 font-medium h-full">Loading tasks...</div>
+            ) : columns.map(col => (
+              <StatusColumn 
+                key={col.id}
+                id={col.id}
+                title={col.title}
+                color={col.color}
+                tasks={tasks.filter(t => t.status === col.id)}
               />
             ))}
 
