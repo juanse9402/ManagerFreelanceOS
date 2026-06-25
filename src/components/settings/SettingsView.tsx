@@ -32,6 +32,10 @@ export const SettingsView: React.FC = () => {
       .eq('client_id', activeClientId)
       .single();
 
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching settings:", error);
+    }
+
     if (data) {
       setSettings(data);
       if (data.theme_color) {
