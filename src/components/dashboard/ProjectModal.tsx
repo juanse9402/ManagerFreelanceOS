@@ -40,8 +40,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
       onSave();
       onClose();
     } else {
-      alert('Error creating project');
-      console.error(error);
+      alert(`Error creating project: ${error.message || JSON.stringify(error)}`);
+      console.error('Insert Error:', error);
     }
   };
 
