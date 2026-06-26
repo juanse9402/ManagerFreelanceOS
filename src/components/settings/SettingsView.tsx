@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const { role, activeClientId } = useAuth();
+  const { role, activeClientId, fetchAvailableClients } = useAuth();
   const [profiles, setProfiles] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({
     instagram_connected: false,
@@ -77,6 +77,7 @@ export const SettingsView: React.FC = () => {
   const handleUpdateUser = async (id: string, newStatus: string, newRole: string) => {
     await supabase.from('profiles').update({ status: newStatus, role: newRole }).eq('id', id);
     fetchProfiles();
+    fetchAvailableClients();
   };
 
   return (

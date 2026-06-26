@@ -12,6 +12,7 @@ interface AuthContextType {
   activeClientId: string | null;
   setActiveClientId: (id: string | null) => void;
   availableClients: any[];
+  fetchAvailableClients: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,7 +24,8 @@ const AuthContext = createContext<AuthContextType>({
   profileName: '',
   activeClientId: null,
   setActiveClientId: () => {},
-  availableClients: []
+  availableClients: [],
+  fetchAvailableClients: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -116,7 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profileName,
       activeClientId,
       setActiveClientId,
-      availableClients
+      availableClients,
+      fetchAvailableClients
     }}>
       {children}
     </AuthContext.Provider>
