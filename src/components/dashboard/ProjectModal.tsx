@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Users, Building } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -9,28 +10,16 @@ interface ProjectModalProps {
 }
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onSave }) => {
+  const { activeClientId, availableClients } = useAuth();
   const [name, setName] = useState('');
-  const [clientId, setClientId] = useState('');
-  const [clients, setClients] = useState<any[]>([]);
+  const [clientId, setClientId] = useState(activeClientId || '');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchClients();
+    if (isOpen && activeClientId) {
+      setClientId(activeClientId);
     }
-  }, [isOpen]);
-
-  const fetchClients = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('role', 'client')
-      .eq('status', 'approved');
-      
-    if (data && !error) {
-      setClients(data);
-    }
-  };
+  }, [isOpen, activeClientId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +37,6 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
     
     if (!error) {
       setName('');
-      setClientId('');
       onSave();
       onClose();
     } else {
@@ -58,6 +46,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
   };
 
   if (!isOpen) return null;
+
+  const selectedClientName = availableClients.find(c => c.id === clientId)?.full_name || 'Unnamed Client';
 
   return (
     <>
@@ -89,26 +79,19 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Assign to Client</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Client Workspace</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Users size={16} className="text-gray-400" />
                   </div>
-                  <select
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all appearance-none"
-                    required
-                  >
-                    <option value="" disabled>Select a client...</option>
-                    {clients.map(c => (
-                      <option key={c.id} value={c.id}>{c.full_name || 'Unnamed Client'}</option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    value={selectedClientName}
+                    disabled
+                    className="w-full border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
                 </div>
-                {clients.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-2 font-medium">No approved clients found. Please approve a client in Settings first.</p>
-                )}
+                <p className="text-xs text-gray-500 mt-2 font-medium">This project will be created for the active workspace.</p>
               </div>
             </div>
             
