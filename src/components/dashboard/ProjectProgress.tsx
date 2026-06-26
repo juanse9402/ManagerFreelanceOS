@@ -7,8 +7,8 @@ interface ProjectProgressProps {
 }
 
 export const ProjectProgress: React.FC<ProjectProgressProps> = ({ project, loading }) => {
-  const currentProgress = project ? project.progress : 0;
-  const currentPhase = project ? project.status : 'No Active Project';
+  const currentProgress = project?.progress || 0;
+  const currentPhase = project?.status || 'No Active Project';
   
   const phases = [
     { name: 'Planning', limit: 0 },
