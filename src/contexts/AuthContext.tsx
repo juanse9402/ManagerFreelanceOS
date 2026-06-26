@@ -67,9 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchAvailableClients = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email')
+      .select('*')
       .eq('role', 'client')
       .eq('status', 'approved');
+      
+    console.log("fetchAvailableClients results:", { data, error });
       
     if (data && !error) {
       setAvailableClients(data);
