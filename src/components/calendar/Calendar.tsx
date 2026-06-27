@@ -135,7 +135,7 @@ export const CalendarView: React.FC = () => {
                     <div 
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}
-                      className={`text-xs p-1.5 rounded cursor-pointer font-medium truncate border shadow-sm transition-transform hover:scale-[1.02] ${
+                      className={`text-xs p-1.5 rounded cursor-pointer font-medium truncate border shadow-sm transition-opacity hover:opacity-80 ${
                         event.platform === 'Instagram' 
                           ? 'bg-pink-50 border-pink-100 text-pink-700' 
                           : 'bg-slate-800 border-slate-900 text-slate-100'
