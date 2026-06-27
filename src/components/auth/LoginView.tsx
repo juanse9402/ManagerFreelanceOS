@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Mail, Lock, Activity } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export const LoginView: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +13,6 @@ export const LoginView: React.FC = () => {
   const [brandColor, setBrandColor] = useState<string>('#000000'); // Default black
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [isClientMode, setIsClientMode] = useState(false);
-  const navigate = useNavigate();
 
   // Check email on blur
   const handleEmailBlur = async () => {

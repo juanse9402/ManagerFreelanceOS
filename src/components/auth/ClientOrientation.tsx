@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, CheckCircle, Image as ImageIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { Lock, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 export const ClientOrientation: React.FC = () => {
   const { user, profileName, setHasCompletedOrientation } = useAuth();

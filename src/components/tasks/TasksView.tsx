@@ -14,7 +14,7 @@ import { StatusColumn } from './StatusColumn';
 import { TaskCard } from './TaskCard';
 import { CreateTaskModal } from './CreateTaskModal';
 import type { TaskType } from './TaskCard';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, CheckSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 

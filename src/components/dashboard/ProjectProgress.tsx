@@ -19,8 +19,6 @@ export const ProjectProgress: React.FC<ProjectProgressProps> = ({ project, loadi
     { name: 'Publishing', limit: 100, desc: 'Live on social platforms.' },
   ];
 
-  const currentPhaseIndex = phases.findIndex(p => currentProgress <= p.limit) || 0;
-
   if (isClientView && project) {
     return (
       <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] border border-gray-100 overflow-hidden">

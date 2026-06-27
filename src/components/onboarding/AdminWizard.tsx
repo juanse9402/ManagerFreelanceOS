@@ -7,7 +7,6 @@ import {
   Eye, 
   UserPlus, 
   ArrowRight, 
-  ArrowLeft,
   CheckCircle,
   Loader2,
   Camera,
@@ -55,7 +54,6 @@ export const AdminWizard: React.FC = () => {
   
   // Step 2: Brand
   const [primaryColor, setPrimaryColor] = useState('#6366f1');
-  const [secondaryColor, setSecondaryColor] = useState('#f3f4f6');
   const [accentColor, setAccentColor] = useState('#ec4899');
   const [logo, setLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -63,7 +61,7 @@ export const AdminWizard: React.FC = () => {
   // Step 4: Client
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
-  const [inviteSent, setInviteSent] = useState(false);
+  const secondaryColor = '#f3f4f6';
 
   const rgb = hexToRgb(primaryColor);
   let contrastWithWhite = 0;

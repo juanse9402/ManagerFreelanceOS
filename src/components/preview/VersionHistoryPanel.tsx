@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { History, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { History, ArrowLeft, Check } from 'lucide-react';
 
 interface Version {
   id: string;
