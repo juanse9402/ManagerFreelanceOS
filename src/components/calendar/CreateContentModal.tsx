@@ -18,7 +18,20 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
   const [time, setTime] = useState('10:00');
   const [copy, setCopy] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setPlatform('Instagram');
+      setType('Reel');
+      setDate(new Date().toISOString().split('T')[0]);
+      setTime('10:00');
+      setCopy('');
+      setMediaUrl('');
+      setFile(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -31,6 +44,30 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
     
     setLoading(true);
     
+    let finalImageUrl = mediaUrl;
+
+    if (file) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('content_media')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        alert(`Error subiendo imagen. Por favor asegúrate de haber creado un bucket llamado 'content_media' en tu Supabase de manera pública. Detalles: ${uploadError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('content_media')
+        .getPublicUrl(filePath);
+        
+      finalImageUrl = publicUrl;
+    }
+    
     const newContent = {
       title: `${type} on ${platform}`,
       type,
@@ -38,7 +75,7 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
       status: 'Draft',
       date,
       description: copy,
-      image_url: mediaUrl,
+      image_url: finalImageUrl,
       client_id: activeClientId
     };
 
@@ -158,16 +195,19 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
             {/* Portada / Media */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
-                <ImageIcon size={14} className="mr-1.5" /> Portada (URL de Imagen)
+                <ImageIcon size={14} className="mr-1.5" /> Portada (Subir Imagen)
               </label>
               <input 
-                type="url"
-                value={mediaUrl}
-                onChange={(e) => setMediaUrl(e.target.value)}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setFile(e.target.files[0]);
+                  }
+                }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1.5">Pega el link de una imagen. En el futuro, podremos conectar con un gestor de archivos.</p>
+              <p className="text-xs text-gray-500 mt-1.5">Sube la portada desde tu dispositivo. Se guardará en el storage temporal de Supabase.</p>
             </div>
 
             {/* Acciones */}
