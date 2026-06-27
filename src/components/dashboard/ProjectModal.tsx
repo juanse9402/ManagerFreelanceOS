@@ -28,8 +28,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, onS
     setLoading(true);
     const { error } = await supabase.from('projects').insert([{
       name: name,
-      client_id: clientId,
-      status: 'Planning'
+      client_id: clientId
     }]);
     
     setLoading(false);
