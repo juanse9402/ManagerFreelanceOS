@@ -12,6 +12,7 @@ import {
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 import { StatusColumn } from './StatusColumn';
 import { TaskCard } from './TaskCard';
+import { CreateTaskModal } from './CreateTaskModal';
 import type { TaskType } from './TaskCard';
 import { Plus, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -28,6 +29,7 @@ export const TasksView: React.FC = () => {
   const { activeClientId } = useAuth();
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,24 +61,12 @@ export const TasksView: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async () => {
+  const handleCreateTask = () => {
     if (!activeClientId) {
       alert("Please select a workspace client first.");
       return;
     }
-    
-    const newTask = {
-      title: 'New Important Task',
-      description: 'Describe the task requirements here...',
-      status: 'todo',
-      priority: 'medium',
-      client_id: activeClientId
-    };
-    
-    const { data, error } = await supabase.from('tasks').insert([newTask]).select();
-    if (!error && data) {
-      fetchTasks();
-    }
+    setIsCreateModalOpen(true);
   };
 
   const updateTaskStatus = async (taskId: string, newStatus: string) => {
@@ -199,6 +189,12 @@ export const TasksView: React.FC = () => {
           </DndContext>
         </div>
       </div>
+
+      <CreateTaskModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={fetchTasks}
+      />
     </div>
   );
 };

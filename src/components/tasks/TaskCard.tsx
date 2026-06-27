@@ -6,10 +6,11 @@ import { GripVertical, Clock, CheckCircle } from 'lucide-react';
 export interface TaskType {
   id: string;
   title: string;
-  description: string;
-  priority: string;
+  category: string;
+  date: string;
   status: string;
   client_id: string;
+  project_id?: string;
 }
 
 interface TaskCardProps {
@@ -31,13 +32,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     transition,
   };
 
-  const getPriorityColor = (p: string) => {
-    switch (p) {
-      case 'high': return 'bg-red-100 text-red-700';
-      case 'medium': return 'bg-amber-100 text-amber-700';
-      case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
+  const getPriorityColor = (category: string) => {
+    // We can map some categories to colors, or just a default
+    if (!category) return 'bg-gray-100 text-gray-700';
+    const c = category.toLowerCase();
+    if (c.includes('urgent') || c.includes('important')) return 'bg-red-100 text-red-700';
+    if (c.includes('design') || c.includes('ui')) return 'bg-purple-100 text-purple-700';
+    if (c.includes('dev') || c.includes('code')) return 'bg-blue-100 text-blue-700';
+    return 'bg-gray-100 text-gray-700';
   };
 
   return (
@@ -57,15 +59,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       </div>
 
       <div className="flex items-center gap-2 pr-6">
-        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
-          {task.priority} Priority
+        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.category)}`}>
+          {task.category || 'General'}
         </span>
       </div>
       
       <div>
         <p className="font-bold text-sm text-[var(--text-primary)] leading-snug">{task.title}</p>
-        {task.description && (
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+        {task.date && (
+          <p className="text-xs text-gray-500 mt-1">Due: {task.date}</p>
         )}
       </div>
       
