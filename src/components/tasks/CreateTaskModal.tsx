@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, FileText, Type } from 'lucide-react';
+import { X, Save, FileText, Type, Paperclip } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -15,6 +15,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('General');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [description, setDescription] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -28,12 +30,30 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     
     setLoading(true);
     
+    let finalAttachmentUrl = '';
+
+    if (attachment) {
+      const fileExt = attachment.name.split('.').pop();
+      const fileName = `task_${Math.random()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage.from('content_media').upload(fileName, attachment);
+      if (uploadError) {
+        alert(`Error subiendo adjunto: ${uploadError.message}`);
+        setLoading(false);
+        return;
+      }
+      const { data } = supabase.storage.from('content_media').getPublicUrl(fileName);
+      finalAttachmentUrl = data.publicUrl;
+    }
+
     const newTask = {
       title,
       category,
       date,
       status: 'todo',
-      client_id: activeClientId
+      client_id: activeClientId,
+      description,
+      attachment_url: finalAttachmentUrl
     };
 
     const { error } = await supabase.from('tasks').insert([newTask]);
@@ -43,6 +63,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     if (!error) {
       setTitle('');
       setCategory('General');
+      setDescription('');
+      setAttachment(null);
       onSave();
       onClose();
     } else {
@@ -106,6 +128,37 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all"
                 required
               />
+            </div>
+
+            {/* Descripción */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <FileText size={14} className="mr-1.5" /> Descripción / Información
+              </label>
+              <textarea 
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Añade detalles sobre la tarea..."
+                rows={3}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all resize-none custom-scrollbar"
+              />
+            </div>
+
+            {/* Adjunto */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <Paperclip size={14} className="mr-1.5" /> Recursos / Adjuntos
+              </label>
+              <input 
+                type="file"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setAttachment(e.target.files[0]);
+                  }
+                }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1.5">Sube imágenes, documentos o cualquier recurso necesario.</p>
             </div>
 
             {/* Acciones */}
