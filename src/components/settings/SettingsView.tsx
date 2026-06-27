@@ -121,9 +121,19 @@ export const SettingsView: React.FC = () => {
 
   const handleDeleteUser = async (id: string) => {
     if (confirm('¿Estás seguro de que deseas eliminar este usuario por completo?')) {
-      await supabase.from('profiles').delete().eq('id', id);
-      fetchProfiles();
-      fetchAvailableClients();
+      // Optimistic UI update
+      setProfiles(profiles.filter(p => p.id !== id));
+      
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      
+      if (error) {
+        console.error("Error deleting user:", error);
+        alert(`No se pudo eliminar de la base de datos (Posible bloqueo de RLS). Detalles: ${error.message}`);
+        // Revert UI if error
+        fetchProfiles();
+      } else {
+        fetchAvailableClients();
+      }
     }
   };
 
