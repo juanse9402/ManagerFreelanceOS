@@ -12,6 +12,8 @@ export const SettingsView: React.FC = () => {
     instagram_connected: false,
     tiktok_connected: false
   });
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (role === 'admin') {
@@ -50,6 +52,16 @@ export const SettingsView: React.FC = () => {
   const updateSetting = async (key: string, value: any) => {
     if (!activeClientId) return;
     
+    // Simulate OAuth delay for networks
+    if (key === 'instagram_connected' || key === 'tiktok_connected') {
+      if (value === true) {
+        setConnecting(key);
+        // Simulate popup delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setConnecting(null);
+      }
+    }
+    
     // Optimistic UI update
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
@@ -67,6 +79,12 @@ export const SettingsView: React.FC = () => {
       }, { onConflict: 'client_id' });
       
     if (error) console.error("Error updating settings:", error);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      alert(`Simulating upload for ${e.target.files[0].name}... Image upload will be connected to storage soon!`);
+    }
   };
 
   const fetchProfiles = async () => {
@@ -106,7 +124,17 @@ export const SettingsView: React.FC = () => {
                   <Plus size={24} />
                 </div>
                 <div>
-                  <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/png, image/jpeg"
+                    onChange={handleFileUpload} 
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                  >
                     Upload Image
                   </button>
                   <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
@@ -193,9 +221,10 @@ export const SettingsView: React.FC = () => {
                 ) : (
                   <button 
                     onClick={() => updateSetting('instagram_connected', true)}
-                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
+                    disabled={connecting === 'instagram_connected'}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors disabled:opacity-50"
                   >
-                    Connect
+                    {connecting === 'instagram_connected' ? 'Connecting...' : 'Connect'}
                   </button>
                 )}
               </div>
@@ -220,14 +249,18 @@ export const SettingsView: React.FC = () => {
                 ) : (
                   <button 
                     onClick={() => updateSetting('tiktok_connected', true)}
-                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
+                    disabled={connecting === 'tiktok_connected'}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors disabled:opacity-50"
                   >
-                    Connect
+                    {connecting === 'tiktok_connected' ? 'Connecting...' : 'Connect'}
                   </button>
                 )}
               </div>
               
-              <button className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 font-medium hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors">
+              <button 
+                onClick={() => alert('Próximamente: ¡Marketplace de integraciones (LinkedIn, Twitter, Facebook)!')}
+                className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm text-gray-500 font-medium hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
+              >
                 + Connect another network
               </button>
             </div>
