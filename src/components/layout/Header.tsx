@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bell, Search, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, Search, LogOut, X } from 'lucide-react';
 import { useTheme } from '../../theme/ThemeContext';
 import type { UserRole } from '../../App';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +10,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ role }) => {
   const { theme, setTheme } = useTheme();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
@@ -59,10 +61,74 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
           </button>
         </div>
 
-        <button className="relative p-2 text-gray-500 hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10 rounded-full transition-colors">
-          <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--brand-accent)] rounded-full border-2 border-white"></span>
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setHasUnread(false);
+            }}
+            className={`relative p-2 rounded-full transition-colors ${showNotifications ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]' : 'text-gray-500 hover:text-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/10'}`}
+          >
+            <Bell size={20} />
+            {hasUnread && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--brand-accent)] rounded-full border-2 border-white"></span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                  <h3 className="font-bold text-gray-900">Notifications</h3>
+                  <button onClick={() => setShowNotifications(false)} className="text-gray-400 hover:text-gray-600">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <div className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-sm">
+                      📝
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Nuevo contenido para aprobar</p>
+                      <p className="text-xs text-gray-500 mt-0.5">El equipo de diseño ha subido un nuevo reel para Instagram.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">Hace 2 horas</p>
+                    </div>
+                  </div>
+                  <div className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0 text-sm">
+                      ✅
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Post publicado</p>
+                      <p className="text-xs text-gray-500 mt-0.5">El carrusel "Tips de Marketing" se publicó con éxito.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">Hace 5 horas</p>
+                    </div>
+                  </div>
+                  <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0 text-sm">
+                      👋
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">¡Bienvenido a Manager OS!</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Configura tu perfil y conecta tus redes sociales para empezar.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">Ayer</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 border-t border-gray-50 bg-gray-50 text-center">
+                  <button 
+                    onClick={() => setShowNotifications(false)}
+                    className="text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]/80"
+                  >
+                    Marcar todas como leídas
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
