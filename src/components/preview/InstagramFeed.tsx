@@ -15,7 +15,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Play, Layers } from 'lucide-react';
+import { Play, Layers, Camera } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -90,12 +90,7 @@ export const InstagramFeed: React.FC = () => {
       }));
       setItems(formatted);
     } else {
-      // Dummy fallback if no data
-      setItems([
-        { id: '1', image: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', status: 'Pendiente', type: 'Reel' },
-        { id: '2', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Post' },
-        { id: '3', image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Carrusel' },
-      ]);
+      setItems([]);
     }
   };
 
@@ -145,15 +140,25 @@ export const InstagramFeed: React.FC = () => {
 
       {/* Grid Drag and Drop */}
       <div className="p-0.5">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-3 gap-0.5">
-              {items.map(item => (
-                <SortableFeedItem key={item.id} item={item} />
-              ))}
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-50 border-t border-gray-100">
+            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+              <Camera size={20} className="text-gray-400" />
             </div>
-          </SortableContext>
-        </DndContext>
+            <p className="text-sm font-semibold text-gray-900 mb-1">No posts yet</p>
+            <p className="text-xs text-gray-500 text-center">Add content to the calendar to see it here.</p>
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-3 gap-0.5">
+                {items.map(item => (
+                  <SortableFeedItem key={item.id} item={item} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
       </div>
     </div>
   );

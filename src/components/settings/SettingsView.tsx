@@ -3,6 +3,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Palette, Share2, Users, Check, Plus, Shield, User, X, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { ClientProfile } from './ClientProfile';
 
 export const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -141,6 +142,10 @@ export const SettingsView: React.FC = () => {
       }
     }
   };
+
+  if (role === 'client') {
+    return <ClientProfile />;
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">

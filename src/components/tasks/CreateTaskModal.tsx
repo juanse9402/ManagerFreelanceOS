@@ -16,6 +16,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [category, setCategory] = useState('General');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
+  const [internalNotes, setInternalNotes] = useState('');
+  const [visibility, setVisibility] = useState<'admin_only' | 'client_visible'>('admin_only');
   const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +55,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       status: 'todo',
       client_id: activeClientId,
       description,
+      internal_notes: internalNotes,
+      visibility,
       attachment_url: finalAttachmentUrl
     };
 
@@ -64,6 +68,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       setTitle('');
       setCategory('General');
       setDescription('');
+      setInternalNotes('');
+      setVisibility('admin_only');
       setAttachment(null);
       onSave();
       onClose();
@@ -133,15 +139,43 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
             {/* Descripción */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
-                <FileText size={14} className="mr-1.5" /> Descripción / Información
+                <FileText size={14} className="mr-1.5" /> Client-Facing Description
               </label>
               <textarea 
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Añade detalles sobre la tarea..."
-                rows={3}
+                placeholder="Details visible to the client..."
+                rows={2}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all resize-none custom-scrollbar"
               />
+            </div>
+
+            {/* Notas Internas */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center text-amber-700">
+                <FileText size={14} className="mr-1.5" /> Internal Notes (Admin only)
+              </label>
+              <textarea 
+                value={internalNotes}
+                onChange={(e) => setInternalNotes(e.target.value)}
+                placeholder="Private notes for your team..."
+                rows={2}
+                className="w-full border border-amber-200 bg-amber-50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none custom-scrollbar"
+              />
+            </div>
+
+            {/* Visibilidad */}
+            <div className="flex items-center gap-3 py-2">
+              <input 
+                type="checkbox"
+                id="visibility-toggle"
+                checked={visibility === 'client_visible'}
+                onChange={(e) => setVisibility(e.target.checked ? 'client_visible' : 'admin_only')}
+                className="h-4 w-4 rounded border-gray-300 text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
+              />
+              <label htmlFor="visibility-toggle" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Visible to Client
+              </label>
             </div>
 
             {/* Adjunto */}

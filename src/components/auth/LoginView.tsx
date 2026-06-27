@@ -1,66 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Mail, Lock, User, Activity } from 'lucide-react';
+import { Mail, Lock, Activity } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const LoginView: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  
+  // Progressive Brand Reveal States
+  const [brandColor, setBrandColor] = useState<string>('#000000'); // Default black
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+  const [isClientMode, setIsClientMode] = useState(false);
+  const navigate = useNavigate();
+
+  // Check email on blur
+  const handleEmailBlur = async () => {
+    if (!email || !email.includes('@')) return;
+    try {
+      // Calls a secure RPC to fetch brand details by email without exposing other users' data
+      const { data, error } = await supabase.rpc('get_client_brand_by_email', { client_email: email });
+      if (data && !error && data.primary_color) {
+        setIsClientMode(true);
+        setBrandColor(data.primary_color);
+        if (data.logo_url) setBrandLogo(data.logo_url);
+      } else {
+        // Reset to default if not found
+        setIsClientMode(false);
+        setBrandColor('#000000');
+        setBrandLogo(null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-            }
-          }
-        });
-        if (error) throw error;
-        setMessage('Account created! Please wait for Admin approval to access the dashboard.');
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      // On success, App.tsx router will handle redirection based on role
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Invalid login credentials');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div 
+      className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans transition-colors duration-500 ease-in-out"
+      style={{ backgroundColor: isClientMode ? `${brandColor}10` : '#f9fafb' }}
+    >
+      <div className="sm:mx-auto sm:w-full sm:max-w-md transition-all duration-400">
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-tr from-[var(--brand-primary)] to-[var(--brand-accent)] rounded-2xl shadow-lg flex items-center justify-center transform -rotate-6">
-            <Activity className="text-white w-8 h-8 rotate-6" />
-          </div>
+          {isClientMode && brandLogo ? (
+            <img 
+              src={brandLogo} 
+              alt="Client Logo" 
+              className="w-20 h-20 object-contain rounded-xl shadow-sm animate-in fade-in zoom-in duration-500"
+            />
+          ) : (
+            <div 
+              className="w-16 h-16 rounded-2xl shadow-lg flex items-center justify-center transform -rotate-6 transition-all duration-500"
+              style={{ background: isClientMode ? brandColor : 'linear-gradient(to top right, #000, #333)' }}
+            >
+              <Activity className="text-white w-8 h-8 rotate-6" />
+            </div>
+          )}
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-          ManagerFreelanceOS
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight transition-colors">
+          {isClientMode ? 'Welcome back.' : 'Manager OS'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          {isLogin ? 'Sign in to your account' : 'Create a new account'}
+          {isClientMode ? 'Let\'s review your content.' : 'Sign in to your account'}
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
           
           {error && (
@@ -68,33 +93,8 @@ export const LoginView: React.FC = () => {
               {error}
             </div>
           )}
-          
-          {message && (
-            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm mb-6">
-              {message}
-            </div>
-          )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-2.5 border"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
               <label className="block text-sm font-medium text-gray-700">Email address</label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -106,7 +106,8 @@ export const LoginView: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-2.5 border"
+                  onBlur={handleEmailBlur}
+                  className="focus:ring-black focus:border-black block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-2.5 border transition-all"
                   placeholder="you@example.com"
                 />
               </div>
@@ -123,7 +124,7 @@ export const LoginView: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-2.5 border"
+                  className="focus:ring-black focus:border-black block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-2.5 border transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -133,38 +134,37 @@ export const LoginView: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[var(--brand-primary)] hover:bg-[var(--brand-primary)]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--brand-primary)] disabled:opacity-50 transition-colors"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white disabled:opacity-50 transition-all duration-500 hover:opacity-90"
+                style={{ backgroundColor: isClientMode ? brandColor : '#000000' }}
               >
-                {loading ? 'Processing...' : isLogin ? 'Sign in' : 'Create account'}
+                {loading ? 'Processing...' : 'Sign in'}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  {isLogin ? 'New to ManagerFreelanceOS?' : 'Already have an account?'}
-                </span>
-              </div>
-            </div>
-
+          {!isClientMode && (
             <div className="mt-6">
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError(null);
-                  setMessage(null);
-                }}
-                className="w-full flex justify-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--brand-primary)] transition-colors"
-              >
-                {isLogin ? 'Create an account' : 'Sign in to your account'}
-              </button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">
+                    New to Manager OS?
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Link
+                  to="/register"
+                  className="w-full flex justify-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  Create a freelancer account
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

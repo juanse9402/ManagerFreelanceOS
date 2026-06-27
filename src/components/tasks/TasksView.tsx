@@ -161,33 +161,52 @@ export const TasksView: React.FC = () => {
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto custom-scrollbar pb-4 -mx-2 px-2">
-        <div className="flex gap-4 h-full min-w-max">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
-            {loading ? (
-              <div className="flex w-full items-center justify-center text-gray-500 font-medium h-full">Loading tasks...</div>
-            ) : columns.map(col => (
-              <StatusColumn 
-                key={col.id}
-                id={col.id}
-                title={col.title}
-                color={col.color}
-                tasks={tasks.filter(t => t.status === col.id)}
-              />
-            ))}
+      {/* Kanban Board or Empty State */}
+      <div className="flex-1 overflow-x-auto custom-scrollbar pb-4 -mx-2 px-2 relative">
+        {loading ? (
+          <div className="flex w-full items-center justify-center text-gray-500 font-medium h-full">Loading tasks...</div>
+        ) : tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-2xl mx-2 bg-gray-50/50">
+            <div className="w-16 h-16 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mb-4">
+              <CheckSquare size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No tasks found</h3>
+            <p className="text-gray-500 text-center max-w-md mb-6">
+              There are no tasks for this workspace yet. Create your first task to start organizing your project.
+            </p>
+            <button 
+              onClick={handleCreateTask}
+              className="flex items-center space-x-2 px-5 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+            >
+              <Plus size={18} />
+              <span>Create First Task</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-4 h-full min-w-max">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              {columns.map(col => (
+                <StatusColumn 
+                  key={col.id}
+                  id={col.id}
+                  title={col.title}
+                  color={col.color}
+                  tasks={tasks.filter(t => t.status === col.id)}
+                />
+              ))}
 
-            <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
-              {activeTask ? <TaskCard task={activeTask} /> : null}
-            </DragOverlay>
-          </DndContext>
-        </div>
+              <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
+                {activeTask ? <TaskCard task={activeTask} /> : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        )}
       </div>
 
       <CreateTaskModal 

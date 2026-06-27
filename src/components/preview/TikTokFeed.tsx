@@ -90,12 +90,7 @@ export const TikTokFeed: React.FC = () => {
       }));
       setItems(formatted);
     } else {
-      // Dummy fallback if no data
-      setItems([
-        { id: '1', image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=400&q=80', views: '1.2M', status: 'Pendiente' },
-        { id: '2', image: 'https://images.unsplash.com/photo-1611162618758-6a4fd45025ea?auto=format&fit=crop&w=400&q=80', views: '850K', status: 'Aprobado' },
-        { id: '3', image: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=400&q=80', views: '2.4M', status: 'Aprobado' },
-      ]);
+      setItems([]);
     }
   };
 
@@ -119,8 +114,8 @@ export const TikTokFeed: React.FC = () => {
     <div className="bg-black text-white rounded-xl shadow-[var(--shadow-card)] overflow-hidden max-w-sm mx-auto">
       {/* Mock Header TikTok */}
       <div className="flex flex-col items-center p-6 border-b border-gray-800">
-        <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden mb-3 border-2 border-gray-700">
-          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&q=80" alt="Avatar" />
+        <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden mb-3 border-2 border-gray-700 flex items-center justify-center">
+          <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&q=80" alt="Avatar" className="w-full h-full object-cover" />
         </div>
         <h3 className="font-bold text-lg">@nexusdigital</h3>
         <p className="text-sm text-gray-400 mb-4">Marketing para empresas 🚀</p>
@@ -149,16 +144,26 @@ export const TikTokFeed: React.FC = () => {
       </div>
 
       {/* Grid Drag and Drop */}
-      <div className="p-0.5">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-3 gap-0.5">
-              {items.map(item => (
-                <SortableFeedItem key={item.id} item={item} />
-              ))}
+      <div className="p-0.5 min-h-[200px]">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-900 border-t border-gray-800">
+            <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mb-3">
+              <Play size={20} className="text-gray-500" />
             </div>
-          </SortableContext>
-        </DndContext>
+            <p className="text-sm font-semibold text-white mb-1">No videos yet</p>
+            <p className="text-xs text-gray-400 text-center">Upload TikTok content to see the feed preview.</p>
+          </div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-3 gap-0.5">
+                {items.map(item => (
+                  <SortableFeedItem key={item.id} item={item} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
       </div>
     </div>
   );

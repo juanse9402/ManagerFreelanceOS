@@ -91,9 +91,9 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
                       📝
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Nuevo contenido para aprobar</p>
-                      <p className="text-xs text-gray-500 mt-0.5">El equipo de diseño ha subido un nuevo reel para Instagram.</p>
-                      <p className="text-[10px] text-gray-400 mt-1">Hace 2 horas</p>
+                      <p className="text-sm font-medium text-gray-900">New content to review</p>
+                      <p className="text-xs text-gray-500 mt-0.5">The design team has uploaded a new reel for Instagram.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">2 hours ago</p>
                     </div>
                   </div>
                   <div className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3">
@@ -101,9 +101,9 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
                       ✅
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Post publicado</p>
-                      <p className="text-xs text-gray-500 mt-0.5">El carrusel "Tips de Marketing" se publicó con éxito.</p>
-                      <p className="text-[10px] text-gray-400 mt-1">Hace 5 horas</p>
+                      <p className="text-sm font-medium text-gray-900">Post published</p>
+                      <p className="text-xs text-gray-500 mt-0.5">The "Marketing Tips" carousel was successfully published.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">5 hours ago</p>
                     </div>
                   </div>
                   <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3">
@@ -111,9 +111,9 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
                       👋
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">¡Bienvenido a Manager OS!</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Configura tu perfil y conecta tus redes sociales para empezar.</p>
-                      <p className="text-[10px] text-gray-400 mt-1">Ayer</p>
+                      <p className="text-sm font-medium text-gray-900">Welcome to Manager OS!</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Set up your profile and connect your social networks to start.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">Yesterday</p>
                     </div>
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
                     onClick={() => setShowNotifications(false)}
                     className="text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]/80"
                   >
-                    Marcar todas como leídas
+                    Mark all as read
                   </button>
                 </div>
               </div>

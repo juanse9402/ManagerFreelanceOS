@@ -38,7 +38,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
       {/* Workspace Selector for Admins */}
       {role === 'admin' && (
         <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/30">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block px-2">Viewing Workspace</label>
+          <div className="flex items-center justify-between mb-1.5 px-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viewing Workspace</label>
+            <button 
+              onClick={() => {
+                // Open drawer logic needs to be lifted up or handled via global state/context.
+                // For now, we dispatch a custom event that App or Layout can listen to.
+                window.dispatchEvent(new CustomEvent('open-client-drawer'));
+              }}
+              className="text-[10px] font-bold text-[var(--brand-primary)] hover:underline uppercase tracking-wider flex items-center"
+            >
+              + New
+            </button>
+          </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Building2 size={14} className="text-gray-400" />

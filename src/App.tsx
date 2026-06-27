@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { ThemeProvider } from './theme/ThemeContext';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './components/dashboard/Dashboard';
+import { ClientDashboard } from './components/dashboard/ClientDashboard';
 import { CalendarView } from './components/calendar/Calendar';
 import { TasksView } from './components/tasks/TasksView';
 import { PreviewView } from './components/preview/PreviewView';
@@ -9,11 +9,70 @@ import { SettingsView } from './components/settings/SettingsView';
 import { ApprovalsView } from './components/approvals/ApprovalsView';
 import { useAuth } from './contexts/AuthContext';
 import { LoginView } from './components/auth/LoginView';
+import { RegisterView } from './components/auth/RegisterView';
+import { ClientOrientation } from './components/auth/ClientOrientation';
+import { AdminWizard } from './components/onboarding/AdminWizard';
+import { ClientCreationDrawer } from './components/dashboard/ClientCreationDrawer';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 export type UserRole = 'admin' | 'client';
 
+function AuthenticatedApp() {
+  const { role, hasCompletedOrientation, fetchAvailableClients } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenDrawer = () => setIsClientDrawerOpen(true);
+    window.addEventListener('open-client-drawer', handleOpenDrawer);
+    return () => window.removeEventListener('open-client-drawer', handleOpenDrawer);
+  }, []);
+
+  // Redirect logic
+  if (role === 'client' && location.pathname.startsWith('/admin')) {
+    return <Navigate to="/client/dashboard" replace />;
+  }
+  if (role === 'admin' && location.pathname.startsWith('/client')) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Determine active view from URL
+  const pathParts = location.pathname.split('/');
+  const activeView = pathParts[2] || 'dashboard';
+
+  const setActiveView = (view: string) => {
+    navigate(`/${role}/${view}`);
+  };
+
+  return (
+    <>
+      <Layout activeView={activeView} setActiveView={setActiveView} role={role!}>
+        <Routes>
+          <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard setActiveView={setActiveView} />} />
+          <Route path="calendar" element={<CalendarView />} />
+          <Route path="tasks" element={<TasksView />} />
+          <Route path="preview" element={<PreviewView />} />
+          <Route path="approvals" element={<ApprovalsView />} />
+          <Route path="settings" element={<SettingsView />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
+        </Routes>
+      </Layout>
+      {role === 'client' && !hasCompletedOrientation && <ClientOrientation />}
+      {role === 'admin' && !hasCompletedOrientation && <AdminWizard />}
+      <ClientCreationDrawer 
+        isOpen={isClientDrawerOpen} 
+        onClose={() => setIsClientDrawerOpen(false)} 
+        onSuccess={() => {
+          fetchAvailableClients();
+        }}
+      />
+    </>
+  );
+}
+
 function App() {
-  const [activeView, setActiveView] = useState('dashboard');
   const { session, loading, role: contextRole, status } = useAuth();
 
   if (loading) {
@@ -21,7 +80,13 @@ function App() {
   }
 
   if (!session) {
-    return <LoginView />;
+    return (
+      <Routes>
+        <Route path="/register" element={<RegisterView />} />
+        <Route path="/login" element={<LoginView />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
   }
 
   if (status === 'pending') {
@@ -53,14 +118,11 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Layout activeView={activeView} setActiveView={setActiveView} role={contextRole}>
-        {activeView === 'dashboard' && <Dashboard setActiveView={setActiveView} />}
-        {activeView === 'calendar' && <CalendarView />}
-        {activeView === 'tasks' && <TasksView />}
-        {activeView === 'preview' && <PreviewView />}
-        {activeView === 'approvals' && <ApprovalsView />}
-        {activeView === 'settings' && <SettingsView />}
-      </Layout>
+      <Routes>
+        <Route path="/admin/*" element={<AuthenticatedApp />} />
+        <Route path="/client/*" element={<AuthenticatedApp />} />
+        <Route path="*" element={<Navigate to={`/${contextRole}/dashboard`} replace />} />
+      </Routes>
     </ThemeProvider>
   );
 }

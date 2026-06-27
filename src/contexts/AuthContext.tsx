@@ -9,6 +9,8 @@ interface AuthContextType {
   role: 'admin' | 'client';
   status: 'pending' | 'approved' | 'rejected';
   profileName: string;
+  hasCompletedOrientation: boolean;
+  setHasCompletedOrientation: (value: boolean) => void;
   activeClientId: string | null;
   setActiveClientId: (id: string | null) => void;
   availableClients: any[];
@@ -22,6 +24,8 @@ const AuthContext = createContext<AuthContextType>({
   role: 'client',
   status: 'pending',
   profileName: '',
+  hasCompletedOrientation: true,
+  setHasCompletedOrientation: () => {},
   activeClientId: null,
   setActiveClientId: () => {},
   availableClients: [],
@@ -35,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'admin' | 'client'>('client');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [profileName, setProfileName] = useState('');
+  const [hasCompletedOrientation, setHasCompletedOrientation] = useState(true);
   
   // Workspace State
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -52,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole(data.role as 'admin' | 'client');
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
         setProfileName(data.full_name || '');
+        setHasCompletedOrientation(data.has_completed_orientation ?? true);
         
         if (data.role === 'admin') {
           fetchAvailableClients();
@@ -71,11 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('role', 'client')
       .eq('status', 'approved');
       
-    console.log("fetchAvailableClients results:", { data, error });
-      
     if (data && !error) {
       setAvailableClients(data);
-      // Si es admin y no ha seleccionado cliente, pero hay clientes disponibles, auto-seleccionar el primero
       if (!activeClientId && data.length > 0) {
         setActiveClientId(data[0].id);
       }
@@ -83,7 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -94,7 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -118,6 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role, 
       status, 
       profileName,
+      hasCompletedOrientation,
+      setHasCompletedOrientation,
       activeClientId,
       setActiveClientId,
       availableClients,
