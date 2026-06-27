@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../theme/ThemeContext';
-import { Palette, Share2, Users, Check, Plus, Shield, User, X } from 'lucide-react';
+import { Palette, Share2, Users, Check, Plus, Shield, User, X, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -117,6 +117,14 @@ export const SettingsView: React.FC = () => {
     await supabase.from('profiles').update({ status: newStatus, role: newRole }).eq('id', id);
     fetchProfiles();
     fetchAvailableClients();
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm('¿Estás seguro de que deseas eliminar este usuario por completo?')) {
+      await supabase.from('profiles').delete().eq('id', id);
+      fetchProfiles();
+      fetchAvailableClients();
+    }
   };
 
   return (
@@ -366,6 +374,15 @@ export const SettingsView: React.FC = () => {
                         >
                           <X size={10} className="mr-1" /> Revocar
                         </button>
+                        {p.status === 'rejected' && (
+                          <button 
+                            onClick={() => handleDeleteUser(p.id)}
+                            className="flex items-center text-[10px] uppercase font-bold text-gray-500 hover:text-gray-800 transition-colors ml-2"
+                            title="Eliminar usuario permanentemente"
+                          >
+                            <Trash2 size={10} className="mr-1" /> Eliminar
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
