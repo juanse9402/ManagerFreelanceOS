@@ -146,7 +146,7 @@ export const TikTokFeed: React.FC = () => {
       {/* Grid Drag and Drop */}
       <div className="p-0.5 flex-1 flex flex-col">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-900 border-t border-gray-800 flex-1">
+          <div className="flex flex-col items-center justify-start pt-16 pb-8 px-4 bg-gray-900 border-t border-gray-800 flex-1">
             <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mb-3">
               <Play size={20} className="text-gray-500" />
             </div>

@@ -141,7 +141,7 @@ export const InstagramFeed: React.FC = () => {
       {/* Grid Drag and Drop */}
       <div className="p-0.5 flex-1 flex flex-col bg-gray-50">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 border-t border-gray-100 flex-1">
+          <div className="flex flex-col items-center justify-start pt-16 pb-8 px-4 border-t border-gray-100 flex-1">
             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
               <Camera size={20} className="text-gray-400" />
             </div>
