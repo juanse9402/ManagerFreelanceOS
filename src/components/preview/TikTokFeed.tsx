@@ -111,7 +111,7 @@ export const TikTokFeed: React.FC = () => {
   };
 
   return (
-    <div className="bg-black text-white rounded-xl shadow-[var(--shadow-card)] overflow-hidden max-w-sm mx-auto">
+    <div className="w-full bg-black text-white rounded-xl shadow-[var(--shadow-card)] overflow-hidden max-w-sm mx-auto flex flex-col min-h-[600px]">
       {/* Mock Header TikTok */}
       <div className="flex flex-col items-center p-6 border-b border-gray-800">
         <div className="w-20 h-20 rounded-full bg-gray-800 overflow-hidden mb-3 border-2 border-gray-700 flex items-center justify-center">
@@ -144,9 +144,9 @@ export const TikTokFeed: React.FC = () => {
       </div>
 
       {/* Grid Drag and Drop */}
-      <div className="p-0.5 min-h-[200px]">
+      <div className="p-0.5 flex-1 flex flex-col">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-900 border-t border-gray-800">
+          <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-900 border-t border-gray-800 flex-1">
             <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mb-3">
               <Play size={20} className="text-gray-500" />
             </div>
@@ -154,15 +154,21 @@ export const TikTokFeed: React.FC = () => {
             <p className="text-xs text-gray-400 text-center">Upload TikTok content to see the feed preview.</p>
           </div>
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-3 gap-0.5">
-                {items.map(item => (
-                  <SortableFeedItem key={item.id} item={item} />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <div className="flex-1 bg-gray-900">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-3 gap-0.5">
+                  {items.map(item => (
+                    <SortableFeedItem key={item.id} item={item} />
+                  ))}
+                  {/* Fill empty cells to make it look like a phone grid */}
+                  {Array.from({ length: Math.max(0, 9 - items.length) }).map((_, i) => (
+                    <div key={`empty-tk-${i}`} className="aspect-[3/4] bg-gray-800/50" />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
         )}
       </div>
     </div>
