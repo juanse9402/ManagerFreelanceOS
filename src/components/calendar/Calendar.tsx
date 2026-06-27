@@ -108,7 +108,7 @@ export const CalendarView: React.FC = () => {
         )}
         
         {/* Celdas de días */}
-        <div className="grid grid-cols-7 flex-1 gap-1 relative">
+        <div className={`grid grid-cols-7 flex-1 gap-1 relative ${view === 'month' ? 'grid-rows-5' : 'grid-rows-1'}`}>
           {displayedDays.map((dayNum, i) => {
             const isCurrentMonth = dayNum > 0 && dayNum <= 30;
             const displayDay = dayNum > 30 ? dayNum - 30 : dayNum <= 0 ? 31 + dayNum : dayNum;
@@ -122,7 +122,7 @@ export const CalendarView: React.FC = () => {
             return (
               <div 
                 key={i} 
-                className={`border border-gray-100 rounded-lg p-2 flex flex-col ${view === 'week' ? 'min-h-[300px]' : 'min-h-[100px]'} ${
+                className={`border border-gray-100 rounded-lg p-2 flex flex-col min-h-0 ${
                   !isCurrentMonth ? 'bg-gray-50 opacity-50' : 'hover:border-gray-300 transition-colors'
                 } ${isToday ? 'ring-2 ring-[var(--brand-primary)]/50 bg-[var(--brand-primary)]/5' : ''}`}
               >
