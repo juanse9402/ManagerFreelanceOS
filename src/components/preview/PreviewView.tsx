@@ -40,7 +40,7 @@ export const PreviewView: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-[var(--text-primary)]">TikTok Profile</h2>
-              <p className="text-xs text-[var(--text-muted)]">Chronological video view</p>
+              <p className="text-xs text-[var(--text-muted)]">Drag to reorder videos (Grid 3x3)</p>
             </div>
           </div>
           
