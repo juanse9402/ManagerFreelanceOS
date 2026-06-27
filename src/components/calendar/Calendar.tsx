@@ -10,6 +10,7 @@ export const CalendarView: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<'month' | 'week'>('month');
 
   useEffect(() => {
     fetchEvents();
@@ -49,8 +50,10 @@ export const CalendarView: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  // Generamos una grilla simple de 35 días para el mock
-  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 4); // Empieza en negativo para padding de mes anterior
+  // Generamos una grilla simple para el mock
+  const monthDays = Array.from({ length: 35 }, (_, i) => i + 1 - 4); // Empieza en negativo para padding de mes anterior
+  const weekDays = Array.from({ length: 7 }, (_, i) => i + 15 - 3); // Semana actual centrada en el día 15
+  const displayedDays = view === 'month' ? monthDays : weekDays;
 
   return (
     <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)] flex flex-col min-h-[calc(100vh-120px)] h-full">
@@ -64,8 +67,18 @@ export const CalendarView: React.FC = () => {
         
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-            <button className="px-3 py-1.5 text-sm font-medium bg-gray-100 rounded-md text-gray-800">Month</button>
-            <button className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-800">Week</button>
+            <button 
+              onClick={() => setView('month')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${view === 'month' ? 'bg-gray-100 text-gray-800' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Month
+            </button>
+            <button 
+              onClick={() => setView('week')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${view === 'week' ? 'bg-gray-100 text-gray-800' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Week
+            </button>
           </div>
           <button 
             onClick={handleCreateContent}
@@ -96,7 +109,7 @@ export const CalendarView: React.FC = () => {
         
         {/* Celdas de días */}
         <div className="grid grid-cols-7 flex-1 gap-1 relative">
-          {days.map((dayNum, i) => {
+          {displayedDays.map((dayNum, i) => {
             const isCurrentMonth = dayNum > 0 && dayNum <= 30;
             const displayDay = dayNum > 30 ? dayNum - 30 : dayNum <= 0 ? 31 + dayNum : dayNum;
             const isToday = dayNum === 15; // Mock "today"
@@ -109,7 +122,7 @@ export const CalendarView: React.FC = () => {
             return (
               <div 
                 key={i} 
-                className={`min-h-[100px] border border-gray-100 rounded-lg p-2 flex flex-col ${
+                className={`border border-gray-100 rounded-lg p-2 flex flex-col ${view === 'week' ? 'min-h-[300px]' : 'min-h-[100px]'} ${
                   !isCurrentMonth ? 'bg-gray-50 opacity-50' : 'hover:border-gray-300 transition-colors'
                 } ${isToday ? 'ring-2 ring-[var(--brand-primary)]/50 bg-[var(--brand-primary)]/5' : ''}`}
               >
