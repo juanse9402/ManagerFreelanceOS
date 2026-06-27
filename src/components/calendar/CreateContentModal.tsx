@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Image as ImageIcon, Instagram, Hash, Clock, Calendar, FileText } from 'lucide-react';
+import { X, Save, Image as ImageIcon, Camera, Hash, Calendar, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -91,7 +91,7 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
                   onClick={() => handlePlatformChange('Instagram')}
                   className={`flex-1 py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 font-medium transition-all ${platform === 'Instagram' ? 'bg-pink-50 border-pink-200 text-pink-700 ring-1 ring-pink-500' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                 >
-                  <Instagram size={18} /> Instagram
+                  <Camera size={18} /> Instagram
                 </button>
                 <button
                   type="button"
