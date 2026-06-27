@@ -110,7 +110,10 @@ export const SettingsView: React.FC = () => {
 
   const fetchProfiles = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (data) setProfiles(data);
+    if (data) {
+      // Filtrar los usuarios eliminados (soft delete)
+      setProfiles(data.filter(p => p.status !== 'deleted'));
+    }
   };
 
   const handleUpdateUser = async (id: string, newStatus: string, newRole: string) => {
@@ -124,11 +127,13 @@ export const SettingsView: React.FC = () => {
       // Optimistic UI update
       setProfiles(profiles.filter(p => p.id !== id));
       
-      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      // En lugar de hacer DELETE (que falla silenciosamente por políticas RLS),
+      // hacemos un "soft delete" cambiando su estado a 'deleted'.
+      const { error } = await supabase.from('profiles').update({ status: 'deleted' }).eq('id', id);
       
       if (error) {
         console.error("Error deleting user:", error);
-        alert(`No se pudo eliminar de la base de datos (Posible bloqueo de RLS). Detalles: ${error.message}`);
+        alert(`No se pudo eliminar de la base de datos. Detalles: ${error.message}`);
         // Revert UI if error
         fetchProfiles();
       } else {
