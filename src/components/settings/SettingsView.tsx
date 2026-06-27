@@ -13,6 +13,8 @@ export const SettingsView: React.FC = () => {
     tiktok_connected: false
   });
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [showNetworkModal, setShowNetworkModal] = useState<'instagram' | 'tiktok' | null>(null);
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,18 +51,37 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  const handleConnectNetwork = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showNetworkModal) return;
+    
+    const key = `${showNetworkModal}_connected`;
+    setConnecting(key);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Update setting
+    const newSettings = { ...settings, [key]: true };
+    setSettings(newSettings);
+    
+    const { error } = await supabase
+      .from('client_settings')
+      .upsert({ 
+        client_id: activeClientId, 
+        [key]: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'client_id' });
+      
+    if (error) console.error("Error updating settings:", error);
+    
+    setConnecting(null);
+    setShowNetworkModal(null);
+    setCredentials({ username: '', password: '' });
+  };
+
   const updateSetting = async (key: string, value: any) => {
     if (!activeClientId) return;
-    
-    // Simulate OAuth delay for networks
-    if (key === 'instagram_connected' || key === 'tiktok_connected') {
-      if (value === true) {
-        setConnecting(key);
-        // Simulate popup delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setConnecting(null);
-      }
-    }
     
     // Optimistic UI update
     const newSettings = { ...settings, [key]: value };
@@ -220,11 +241,10 @@ export const SettingsView: React.FC = () => {
                   </button>
                 ) : (
                   <button 
-                    onClick={() => updateSetting('instagram_connected', true)}
-                    disabled={connecting === 'instagram_connected'}
-                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors disabled:opacity-50"
+                    onClick={() => setShowNetworkModal('instagram')}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
                   >
-                    {connecting === 'instagram_connected' ? 'Connecting...' : 'Connect'}
+                    Connect
                   </button>
                 )}
               </div>
@@ -248,11 +268,10 @@ export const SettingsView: React.FC = () => {
                   </button>
                 ) : (
                   <button 
-                    onClick={() => updateSetting('tiktok_connected', true)}
-                    disabled={connecting === 'tiktok_connected'}
-                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors disabled:opacity-50"
+                    onClick={() => setShowNetworkModal('tiktok')}
+                    className="flex items-center text-xs text-gray-600 font-semibold bg-gray-200 px-3 py-1 rounded-full hover:bg-green-100 hover:text-green-600 transition-colors"
                   >
-                    {connecting === 'tiktok_connected' ? 'Connecting...' : 'Connect'}
+                    Connect
                   </button>
                 )}
               </div>
@@ -360,6 +379,75 @@ export const SettingsView: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Network Login Modal */}
+      {showNetworkModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center">
+                {showNetworkModal === 'instagram' ? (
+                  <span className="text-pink-600 mr-2">Instagram Login</span>
+                ) : (
+                  <span className="text-black mr-2">TikTok Login</span>
+                )}
+              </h3>
+              <button 
+                onClick={() => { setShowNetworkModal(null); setCredentials({ username: '', password: '' }); }} 
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleConnectNetwork} className="p-5 space-y-4">
+              <p className="text-sm text-gray-500 mb-4">
+                Por favor, ingresa tus credenciales de {showNetworkModal === 'instagram' ? 'Instagram' : 'TikTok'} para autorizar a FreelanceOS a publicar en tu cuenta.
+              </p>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Username or Email</label>
+                <input 
+                  type="text" 
+                  required
+                  value={credentials.username}
+                  onChange={e => setCredentials({...credentials, username: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                  placeholder="@username"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                <input 
+                  type="password" 
+                  required
+                  value={credentials.password}
+                  onChange={e => setCredentials({...credentials, password: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                  placeholder="••••••••"
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={connecting !== null}
+                className="w-full py-2.5 bg-[var(--brand-primary)] text-white font-semibold rounded-lg text-sm hover:bg-[var(--brand-primary)]/90 transition-colors disabled:opacity-70 mt-2 flex justify-center items-center"
+              >
+                {connecting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Connecting...
+                  </span>
+                ) : 'Log In & Authorize'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
