@@ -16,6 +16,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Play, Layers } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FeedItemProps {
   item: any;
@@ -62,17 +64,40 @@ const SortableFeedItem: React.FC<FeedItemProps> = ({ item }) => {
 };
 
 export const InstagramFeed: React.FC = () => {
-  const [items, setItems] = useState([
-    { id: '1', image: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', status: 'Pendiente', type: 'Reel' },
-    { id: '2', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Post' },
-    { id: '3', image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Carrusel' },
-    { id: '4', image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80', status: 'En revisión', type: 'Post' },
-    { id: '5', image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Post' },
-    { id: '6', image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Reel' },
-    { id: '7', image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=400&q=80', status: 'Pendiente', type: 'Post' },
-    { id: '8', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Carrusel' },
-    { id: '9', image: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Post' },
-  ]);
+  const { activeClientId } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (activeClientId) {
+      fetchItems();
+    }
+  }, [activeClientId]);
+
+  const fetchItems = async () => {
+    const { data } = await supabase
+      .from('content_posts')
+      .select('*')
+      .eq('client_id', activeClientId)
+      .eq('platform', 'Instagram')
+      .order('date', { ascending: false });
+
+    if (data && data.length > 0) {
+      const formatted = data.map(p => ({
+        id: p.id,
+        image: p.image_url || 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80',
+        status: p.status,
+        type: p.type
+      }));
+      setItems(formatted);
+    } else {
+      // Dummy fallback if no data
+      setItems([
+        { id: '1', image: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80', status: 'Pendiente', type: 'Reel' },
+        { id: '2', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Post' },
+        { id: '3', image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=400&q=80', status: 'Aprobado', type: 'Carrusel' },
+      ]);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

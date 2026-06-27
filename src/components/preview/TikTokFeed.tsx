@@ -16,6 +16,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Play } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FeedItemProps {
   item: any;
@@ -62,14 +64,40 @@ const SortableFeedItem: React.FC<FeedItemProps> = ({ item }) => {
 };
 
 export const TikTokFeed: React.FC = () => {
-  const [items, setItems] = useState([
-    { id: '1', views: '12.5K', image: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=400&q=80' },
-    { id: '2', views: '8.2K', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80' },
-    { id: '3', views: '21K', image: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&w=400&q=80' },
-    { id: '4', views: '5.1K', image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80' },
-    { id: '5', views: '3.4K', image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=400&q=80' },
-    { id: '6', views: 'PENDIENTE', image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=400&q=80', pending: true },
-  ]);
+  const { activeClientId } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (activeClientId) {
+      fetchItems();
+    }
+  }, [activeClientId]);
+
+  const fetchItems = async () => {
+    const { data } = await supabase
+      .from('content_posts')
+      .select('*')
+      .eq('client_id', activeClientId)
+      .eq('platform', 'Tiktok')
+      .order('date', { ascending: false });
+
+    if (data && data.length > 0) {
+      const formatted = data.map(p => ({
+        id: p.id,
+        image: p.image_url || 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=400&q=80',
+        views: '0',
+        pending: p.status !== 'Aprobado'
+      }));
+      setItems(formatted);
+    } else {
+      // Dummy fallback if no data
+      setItems([
+        { id: '1', image: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=400&q=80', views: '1.2M', status: 'Pendiente' },
+        { id: '2', image: 'https://images.unsplash.com/photo-1611162618758-6a4fd45025ea?auto=format&fit=crop&w=400&q=80', views: '850K', status: 'Aprobado' },
+        { id: '3', image: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=400&q=80', views: '2.4M', status: 'Aprobado' },
+      ]);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

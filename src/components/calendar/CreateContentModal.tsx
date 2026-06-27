@@ -18,7 +18,8 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
   const [time, setTime] = useState('10:00');
   const [copy, setCopy] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [contentFile, setContentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
@@ -29,7 +30,8 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
       setTime('10:00');
       setCopy('');
       setMediaUrl('');
-      setFile(null);
+      setCoverFile(null);
+      setContentFile(null);
     }
   }, [isOpen]);
 
@@ -45,36 +47,47 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
     setLoading(true);
     
     let finalImageUrl = mediaUrl;
+    let finalContentUrl = '';
 
-    if (file) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('content_media')
-        .upload(filePath, file);
-
+    // Upload Cover
+    if (coverFile) {
+      const fileExt = coverFile.name.split('.').pop();
+      const fileName = `cover_${Math.random()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage.from('content_media').upload(fileName, coverFile);
       if (uploadError) {
-        alert(`Error subiendo imagen. Por favor asegúrate de haber creado un bucket llamado 'content_media' en tu Supabase de manera pública. Detalles: ${uploadError.message}`);
+        alert(`Error subiendo portada: ${uploadError.message}`);
         setLoading(false);
         return;
       }
+      const { data } = supabase.storage.from('content_media').getPublicUrl(fileName);
+      finalImageUrl = data.publicUrl;
+    }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('content_media')
-        .getPublicUrl(filePath);
-        
-      finalImageUrl = publicUrl;
+    // Upload Video/Content
+    if (contentFile) {
+      const fileExt = contentFile.name.split('.').pop();
+      const fileName = `content_${Math.random()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage.from('content_media').upload(fileName, contentFile);
+      if (uploadError) {
+        alert(`Error subiendo contenido: ${uploadError.message}`);
+        setLoading(false);
+        return;
+      }
+      const { data } = supabase.storage.from('content_media').getPublicUrl(fileName);
+      finalContentUrl = data.publicUrl;
     }
     
+    const finalDescription = finalContentUrl ? `${copy}\n\n[URL del Contenido/Video: ${finalContentUrl}]` : copy;
+
     const newContent = {
       title: `${type} on ${platform}`,
       type,
       platform,
       status: 'Draft',
       date,
-      description: copy,
+      description: finalDescription,
       image_url: finalImageUrl,
       client_id: activeClientId
     };
@@ -192,22 +205,40 @@ export const CreateContentModal: React.FC<CreateContentModalProps> = ({ isOpen, 
               />
             </div>
 
+            {/* Archivo de Contenido (Video/Imagen principal) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <Camera size={14} className="mr-1.5" /> Archivo de Contenido (Video/Imagen)
+              </label>
+              <input 
+                type="file"
+                accept="video/*,image/*"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setContentFile(e.target.files[0]);
+                  }
+                }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1.5">Sube el Reel, TikTok o imagen principal.</p>
+            </div>
+
             {/* Portada / Media */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
-                <ImageIcon size={14} className="mr-1.5" /> Portada (Subir Imagen)
+                <ImageIcon size={14} className="mr-1.5" /> Portada (Miniatura)
               </label>
               <input 
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
-                    setFile(e.target.files[0]);
+                    setCoverFile(e.target.files[0]);
                   }
                 }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1.5">Sube la portada desde tu dispositivo. Se guardará en el storage temporal de Supabase.</p>
+              <p className="text-xs text-gray-500 mt-1.5">Sube la portada desde tu dispositivo. Se verá en el Preview Feed.</p>
             </div>
 
             {/* Acciones */}
