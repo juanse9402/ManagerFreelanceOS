@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { ContentDrawer } from './ContentDrawer';
+import { CreateContentModal } from './CreateContentModal';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -38,27 +39,14 @@ export const CalendarView: React.FC = () => {
     }
   };
 
-  const handleCreateContent = async () => {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handleCreateContent = () => {
     if (!activeClientId) {
       alert("Please select a workspace client first.");
       return;
     }
-    
-    const newContent = {
-      title: 'New Content Post',
-      type: 'Post',
-      platform: 'Instagram',
-      status: 'Draft',
-      date: '2026-06-15', // Default to today in our mock calendar
-      client_id: activeClientId
-    };
-    
-    const { data, error } = await supabase.from('content_posts').insert([newContent]).select();
-    if (!error && data) {
-      fetchEvents();
-    } else {
-      console.error("Error creating content:", error);
-    }
+    setIsCreateModalOpen(true);
   };
 
   // Generamos una grilla simple de 35 días para el mock
@@ -156,6 +144,12 @@ export const CalendarView: React.FC = () => {
         onClose={() => setSelectedEvent(null)} 
         item={selectedEvent}
         onUpdate={fetchEvents}
+      />
+
+      <CreateContentModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={fetchEvents}
       />
     </div>
   );

@@ -72,22 +72,27 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
             </div>
           </div>
 
-          {/* Media Preview (Mock) */}
+          {/* Media Preview (Mock / Real) */}
           <div className="w-full aspect-[4/5] bg-gray-100 rounded-xl mb-6 relative overflow-hidden flex items-center justify-center border border-gray-200">
-            <img 
-              src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=600&q=80" 
-              alt="Contenido"
-              className="w-full h-full object-cover"
-            />
+            {item.image_url ? (
+              <img 
+                src={item.image_url} 
+                alt="Contenido"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-gray-400 flex flex-col items-center">
+                <Camera size={32} className="mb-2" />
+                <span className="text-sm font-medium">Sin Portada</span>
+              </div>
+            )}
           </div>
 
           {/* Copy / Caption */}
           <div className="mb-6">
             <h3 className="text-sm font-bold text-gray-800 mb-2">Copy / Caption</h3>
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 leading-relaxed">
-              <p className="mb-2">Are you disorganized? Try these 3 methods to save up to 10 hours a week! 🚀👇</p>
-              <p className="mb-2">1. Time-blocking<br/>2. Pomodoro Technique<br/>3. Automating repetitive tasks</p>
-              <p className="text-[var(--brand-primary)]">#Productivity #Freelance #Tips</p>
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+              {item.description || 'Sin texto'}
             </div>
           </div>
 
