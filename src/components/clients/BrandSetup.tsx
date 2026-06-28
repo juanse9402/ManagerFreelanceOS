@@ -1,21 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Upload, Check, Video, Camera, Globe } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { availableClients } = useAuth();
+  const { availableClients, fetchAvailableClients } = useAuth();
   const client = availableClients.find(c => c.id === id);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoUrl, setLogoUrl] = useState(client?.brand_settings?.logo_url || '');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const url = URL.createObjectURL(file);
       setLogoUrl(url);
+      setLogoFile(file);
     }
   };
 
@@ -25,25 +28,67 @@ export const BrandSetup: React.FC = () => {
   
   const [font, setFont] = useState('Inter');
   const [networks, setNetworks] = useState({
-    instagram: true,
-    tiktok: false,
-    facebook: false
+    instagram: client?.brand_settings?.networks?.instagram ?? true,
+    tiktok: client?.brand_settings?.networks?.tiktok ?? false,
+    facebook: client?.brand_settings?.networks?.facebook ?? false
   });
   
   const [handles, setHandles] = useState({
-    instagram: '',
-    tiktok: '',
-    facebook: ''
+    instagram: client?.brand_settings?.handles?.instagram || '',
+    tiktok: client?.brand_settings?.handles?.tiktok || '',
+    facebook: client?.brand_settings?.handles?.facebook || ''
   });
   const [showToast, setShowToast] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!client) {
     return <div className="p-8 text-center text-gray-500">Client not found</div>;
   }
 
-  const handleSave = () => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const handleSave = async () => {
+    setIsSaving(true);
+    let finalLogoUrl = logoUrl;
+    
+    try {
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `client_logos/${client.id}_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('content_media')
+          .upload(fileName, logoFile);
+          
+        if (!uploadError) {
+          const { data } = supabase.storage.from('content_media').getPublicUrl(fileName);
+          finalLogoUrl = data.publicUrl;
+        }
+      }
+
+      const newSettings = {
+        primaryColor,
+        secondaryColor,
+        accentColor,
+        font,
+        logo_url: finalLogoUrl,
+        networks,
+        handles
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ brand_settings: newSettings })
+        .eq('id', client.id);
+
+      if (!error) {
+        await fetchAvailableClients();
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving brand settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -276,9 +321,11 @@ export const BrandSetup: React.FC = () => {
             {!showToast && <div></div>}
             <button 
               onClick={handleSave}
-              className="bg-[var(--brand-primary)] text-white px-6 py-2.5 rounded-xl font-bold shadow-sm hover:bg-[var(--brand-primary)]/90 transition-all text-sm"
+              disabled={isSaving}
+              className={`text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-all text-sm ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
+              style={{ backgroundColor: 'var(--brand-primary)' }}
             >
-              Save Brand Settings
+              {isSaving ? 'Saving...' : 'Save Brand Settings'}
             </button>
           </div>
         </div>
