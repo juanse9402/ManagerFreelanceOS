@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Upload, Check, Video, Camera, Globe } from 'lucide-react';
+import { Upload, Check, Video, Camera, Globe, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { OAuthPopup } from './OAuthPopup';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +39,12 @@ export const BrandSetup: React.FC = () => {
     tiktok: client?.brand_settings?.handles?.tiktok || '',
     facebook: client?.brand_settings?.handles?.facebook || ''
   });
+  
+  const [oauthState, setOauthState] = useState<{isOpen: boolean, network: 'instagram' | 'tiktok' | 'facebook' | null}>({
+    isOpen: false,
+    network: null
+  });
+
   const [showToast, setShowToast] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -227,17 +234,35 @@ export const BrandSetup: React.FC = () => {
                 </div>
                 {networks.instagram && (
                   <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
-                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">Instagram Handle</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">@</span>
-                      <input 
-                        type="text" 
-                        value={handles.instagram}
-                        onChange={(e) => setHandles(prev => ({...prev, instagram: e.target.value}))}
-                        placeholder="username" 
-                        className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
-                      />
-                    </div>
+                    {handles.instagram ? (
+                      <div className="flex items-center justify-between bg-white border border-gray-100 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex items-center justify-center">
+                            <Check size={16} className="text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-900">Connected</p>
+                            <p className="text-xs text-gray-500">@{handles.instagram}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setHandles(prev => ({...prev, instagram: ''}))}
+                          className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
+                        >
+                          <LogOut size={14} className="mr-1" /> Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
+                        <button 
+                          onClick={() => setOauthState({ isOpen: true, network: 'instagram' })}
+                          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                        >
+                          <Camera size={16} /> <span>Connect Instagram</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -260,17 +285,35 @@ export const BrandSetup: React.FC = () => {
                 </div>
                 {networks.tiktok && (
                   <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
-                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">TikTok Handle</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">@</span>
-                      <input 
-                        type="text" 
-                        value={handles.tiktok}
-                        onChange={(e) => setHandles(prev => ({...prev, tiktok: e.target.value}))}
-                        placeholder="username" 
-                        className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
-                      />
-                    </div>
+                    {handles.tiktok ? (
+                      <div className="flex items-center justify-between bg-white border border-gray-100 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center">
+                            <Check size={16} className="text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-900">Connected</p>
+                            <p className="text-xs text-gray-500">@{handles.tiktok}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setHandles(prev => ({...prev, tiktok: ''}))}
+                          className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
+                        >
+                          <LogOut size={14} className="mr-1" /> Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
+                        <button 
+                          onClick={() => setOauthState({ isOpen: true, network: 'tiktok' })}
+                          className="w-full flex items-center justify-center space-x-2 bg-black text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                        >
+                          <Video size={16} /> <span>Connect TikTok</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -293,16 +336,35 @@ export const BrandSetup: React.FC = () => {
                 </div>
                 {networks.facebook && (
                   <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
-                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">Facebook Page Name</label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={handles.facebook}
-                        onChange={(e) => setHandles(prev => ({...prev, facebook: e.target.value}))}
-                        placeholder="Page Name" 
-                        className="w-full px-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
-                      />
-                    </div>
+                    {handles.facebook ? (
+                      <div className="flex items-center justify-between bg-white border border-gray-100 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                            <Check size={16} className="text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-900">Connected</p>
+                            <p className="text-xs text-gray-500">{handles.facebook}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setHandles(prev => ({...prev, facebook: ''}))}
+                          className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
+                        >
+                          <LogOut size={14} className="mr-1" /> Disconnect
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
+                        <button 
+                          onClick={() => setOauthState({ isOpen: true, network: 'facebook' })}
+                          className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                        >
+                          <Globe size={16} /> <span>Connect Facebook</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -384,6 +446,17 @@ export const BrandSetup: React.FC = () => {
           This is exactly what {client.full_name} will see when they log in.
         </p>
       </div>
+
+      {/* OAuth Popup Modal */}
+      <OAuthPopup 
+        isOpen={oauthState.isOpen}
+        network={oauthState.network}
+        onClose={() => setOauthState({ isOpen: false, network: null })}
+        onSuccess={(network, handle) => {
+          setHandles(prev => ({ ...prev, [network]: handle }));
+          setOauthState({ isOpen: false, network: null });
+        }}
+      />
     </div>
   );
 };
