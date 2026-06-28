@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Filter, CheckSquare, Plus, Search, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { CheckSquare, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const TasksView: React.FC = () => {
   const { activeClientId } = useAuth();
   const [view, setView] = useState<'weekly' | 'daily'>('weekly');
-  const [tasks, setTasks] = useState<any[]>([]); // Placeholder for tasks
+  const [tasks] = useState<any[]>([]); // Placeholder for tasks
 
   const handleCreateTask = () => {
     // Open task drawer

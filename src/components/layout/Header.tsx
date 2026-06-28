@@ -3,18 +3,18 @@ import { Bell, Search, LogOut, X } from 'lucide-react';
 import { useTheme } from '../../theme/ThemeContext';
 import type { UserRole } from '../../App';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
   role: UserRole;
 }
 
 export const Header: React.FC<HeaderProps> = ({ role }) => {
-  const { theme, setTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasUnread, setHasUnread] = useState(true);
 
   const { activeClientId, availableClients } = useAuth();
-  const activeClient = availableClients.find(c => c.id === activeClientId);
+  const activeClient = availableClients.find((c: any) => c.id === activeClientId);
 
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">

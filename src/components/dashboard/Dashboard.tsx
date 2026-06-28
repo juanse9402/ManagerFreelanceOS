@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Plus, Users, Clock, CheckSquare, Calendar, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const Dashboard: React.FC<{ setActiveView: (v: string) => void }> = ({ setActiveView }) => {
+export const Dashboard: React.FC = () => {
   const { profileName, availableClients, role } = useAuth();
   const navigate = useNavigate();
 

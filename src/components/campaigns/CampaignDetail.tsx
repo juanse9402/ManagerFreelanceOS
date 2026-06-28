@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const CampaignDetail: React.FC = () => {
-  const { id, campaignId } = useParams<{ id: string; campaignId: string }>();
+  const { id } = useParams<{ id: string }>();
   const { availableClients } = useAuth();
   
   const client = availableClients.find(c => c.id === id);

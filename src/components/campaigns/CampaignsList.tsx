@@ -1,12 +1,11 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus } from 'lucide-react';
 
 export const CampaignsList: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { availableClients } = useAuth();
-  const navigate = useNavigate();
   
   const client = availableClients.find(c => c.id === id);
 

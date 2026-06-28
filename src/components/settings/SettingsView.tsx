@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Building, Bell, Save, Lock, Mail } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-
 export const SettingsView: React.FC = () => {
   const { profileName, role } = useAuth();
   const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'notifications'>('account');
