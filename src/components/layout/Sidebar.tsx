@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings, ChevronDown, Building2, Users, Palette, Megaphone, FolderKanban, Grid } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   activeView: string;
@@ -11,6 +11,8 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, role }) => {
   const { profileName, activeClientId, setActiveClientId, availableClients, clientProfile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   
   const brandSettings = clientProfile?.brand_settings || {};
@@ -166,7 +168,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
             </div>
             <select
               value={activeClientId || ''}
-              onChange={(e) => setActiveClientId(e.target.value)}
+              onChange={(e) => {
+                const newId = e.target.value;
+                setActiveClientId(newId);
+                
+                const pathParts = location.pathname.split('/');
+                if (pathParts[2] === 'clients' && pathParts[3]) {
+                  pathParts[3] = newId;
+                  
+                  if (pathParts[4] === 'campaigns' && pathParts.length > 5) {
+                    navigate(`/${pathParts[1]}/clients/${newId}/campaigns`);
+                  } else {
+                    navigate(pathParts.join('/'));
+                  }
+                }
+              }}
               className="w-full bg-white border border-gray-200 rounded-lg pl-9 pr-8 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all appearance-none cursor-pointer shadow-sm hover:border-gray-300"
             >
               <option value="" disabled>Select a client...</option>
