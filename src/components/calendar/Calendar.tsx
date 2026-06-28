@@ -133,7 +133,7 @@ export const CalendarView: React.FC = () => {
       </div>
 
       {/* Grid del Calendario o Empty State */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative min-h-0">
         {events.length === 0 && !loading ? (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-50/80 backdrop-blur-[2px] rounded-2xl border-2 border-dashed border-gray-200">
             <div className="w-16 h-16 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mb-4">
@@ -169,7 +169,7 @@ export const CalendarView: React.FC = () => {
         )}
         
         {/* Celdas de días */}
-        <div className={`grid grid-cols-7 flex-1 gap-1 relative ${view === 'month' ? 'grid-rows-5' : 'grid-rows-1'}`}>
+        <div className={`grid grid-cols-7 flex-1 min-h-0 gap-1 relative ${view === 'month' ? 'grid-rows-5' : 'grid-rows-1'}`}>
           {displayedDays.map((dayNum, i) => {
             const isCurrentMonth = dayNum > 0 && dayNum <= 30;
             const displayDay = dayNum > 30 ? dayNum - 30 : dayNum <= 0 ? 31 + dayNum : dayNum;
