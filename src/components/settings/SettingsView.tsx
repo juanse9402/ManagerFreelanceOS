@@ -1,14 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, Building, Bell, Save, Lock, Mail, HelpCircle } from 'lucide-react';
+import { User, Building, Bell, Save, Lock, Mail, HelpCircle, CheckCircle } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
   const { profileName, role } = useAuth();
   const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'notifications' | 'support'>('account');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Avatar State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      setAvatarUrl(url);
+    }
+  };
+
+  // Toggles State
+  const [notifs, setNotifs] = useState({
+    n1: true, n2: false, n3: true, n4: true, n5: true, n6: false
+  });
+
+  const toggleNotif = (key: keyof typeof notifs) => {
+    setNotifs(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300 relative">
       
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center animate-in fade-in slide-in-from-bottom-4 z-50">
+          <CheckCircle className="text-green-400 mr-3" size={20} />
+          <span className="text-sm font-semibold">{toast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Settings</h1>
@@ -76,12 +110,26 @@ export const SettingsView: React.FC = () => {
                 
                 <div className="space-y-5">
                   <div className="flex items-center space-x-5">
-                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-xl border-2 border-dashed border-gray-300">
-                      {profileName?.substring(0, 2).toUpperCase()}
-                    </div>
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-xl border-2 border-dashed border-gray-300">
+                        {profileName?.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
                     {role === 'admin' && (
                       <div>
-                        <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                        />
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
                           Change Photo
                         </button>
                         <p className="text-xs text-gray-500 mt-2">JPG or PNG. Max 1MB.</p>
@@ -117,7 +165,10 @@ export const SettingsView: React.FC = () => {
 
                   {role === 'admin' && (
                     <div className="pt-4 flex justify-end">
-                      <button className="flex items-center space-x-2 bg-[var(--brand-primary)] text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity text-sm">
+                      <button 
+                        onClick={() => showToast('Profile settings saved successfully.')}
+                        className="flex items-center space-x-2 bg-[var(--brand-primary)] text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity text-sm"
+                      >
                         <Save size={16} />
                         <span>Save Changes</span>
                       </button>
@@ -142,7 +193,10 @@ export const SettingsView: React.FC = () => {
                     <input type="password" placeholder="••••••••" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
                   </div>
                   <div className="pt-2 flex justify-end">
-                    <button className="flex items-center space-x-2 bg-gray-100 text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors text-sm border border-gray-200">
+                    <button 
+                      onClick={() => showToast('Password updated successfully.')}
+                      className="flex items-center space-x-2 bg-gray-100 text-gray-700 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors text-sm border border-gray-200"
+                    >
                       <Lock size={16} />
                       <span>Update Password</span>
                     </button>
@@ -179,7 +233,10 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 <div className="pt-4 flex justify-end">
-                  <button className="flex items-center space-x-2 bg-[var(--brand-primary)] text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity text-sm">
+                  <button 
+                    onClick={() => showToast('Workspace settings saved.')}
+                    className="flex items-center space-x-2 bg-[var(--brand-primary)] text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity text-sm"
+                  >
                     <Save size={16} />
                     <span>Save Workspace Settings</span>
                   </button>
@@ -200,8 +257,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">Content Ready for Review</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me when new content is ready for my approval.</p>
                       </div>
-                      <div className="w-10 h-6 bg-[var(--brand-primary)] rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-4"></div>
+                      <div 
+                        onClick={() => toggleNotif('n1')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n1 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n1 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
@@ -209,8 +269,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">Task Updates</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me when a task's status changes.</p>
                       </div>
-                      <div className="w-10 h-6 bg-gray-200 rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-0"></div>
+                      <div 
+                        onClick={() => toggleNotif('n2')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n2 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n2 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
                   </>
@@ -221,8 +284,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">Client Requests Changes</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me when a client leaves feedback that requires action.</p>
                       </div>
-                      <div className="w-10 h-6 bg-[var(--brand-primary)] rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-4"></div>
+                      <div 
+                        onClick={() => toggleNotif('n3')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n3 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n3 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
 
@@ -231,8 +297,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">New Comments</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me when a client leaves a comment on any content piece.</p>
                       </div>
-                      <div className="w-10 h-6 bg-[var(--brand-primary)] rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-4"></div>
+                      <div 
+                        onClick={() => toggleNotif('n4')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n4 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n4 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
 
@@ -241,8 +310,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">Overdue Tasks</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me when a task passes its due date without being completed.</p>
                       </div>
-                      <div className="w-10 h-6 bg-[var(--brand-primary)] rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-4"></div>
+                      <div 
+                        onClick={() => toggleNotif('n5')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n5 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n5 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
 
@@ -251,8 +323,11 @@ export const SettingsView: React.FC = () => {
                         <h4 className="font-semibold text-sm text-gray-900">Daily Summary</h4>
                         <p className="text-xs text-gray-500 mt-0.5">Email me a daily summary of pending items across all clients.</p>
                       </div>
-                      <div className="w-10 h-6 bg-gray-200 rounded-full transition-colors flex items-center px-1 cursor-pointer">
-                        <div className="w-4 h-4 bg-white rounded-full translate-x-0"></div>
+                      <div 
+                        onClick={() => toggleNotif('n6')}
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${notifs.n6 ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                      >
+                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${notifs.n6 ? 'translate-x-4' : 'translate-x-0'}`}></div>
                       </div>
                     </div>
                   </>
