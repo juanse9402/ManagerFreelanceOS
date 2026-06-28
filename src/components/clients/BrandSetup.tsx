@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Upload, Check, Video, Camera, Globe } from 'lucide-react';
@@ -7,6 +7,17 @@ export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { availableClients } = useAuth();
   const client = availableClients.find(c => c.id === id);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState(client?.brand_settings?.logo_url || '');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
+      setLogoUrl(url);
+    }
+  };
 
   const [primaryColor, setPrimaryColor] = useState(client?.brand_settings?.primaryColor || '#8B5CF6');
   const [secondaryColor, setSecondaryColor] = useState(client?.brand_settings?.secondaryColor || '#F3F4F6');
@@ -52,11 +63,34 @@ export const BrandSetup: React.FC = () => {
             <h3 className="text-sm font-bold text-gray-900 mb-1">Client Logo</h3>
             <p className="text-xs text-gray-500 mb-3">Appears in the client's portal header, sidebar, and invitation email.</p>
             
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[var(--brand-primary)]/50 hover:bg-[var(--brand-primary)]/5 transition-all cursor-pointer group">
-              <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-[var(--brand-primary)] mb-3" />
-              <p className="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
-              <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max. 2MB)</p>
-            </div>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+            />
+            
+            {logoUrl ? (
+              <div className="border-2 border-gray-200 rounded-xl p-4 text-center relative group">
+                <img src={logoUrl} alt="Logo preview" className="h-20 object-contain mx-auto mb-3 rounded" />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-white border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50"
+                >
+                  Change Logo
+                </button>
+              </div>
+            ) : (
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[var(--brand-primary)]/50 hover:bg-[var(--brand-primary)]/5 transition-all cursor-pointer group"
+              >
+                <Upload className="mx-auto h-8 w-8 text-gray-400 group-hover:text-[var(--brand-primary)] mb-3" />
+                <p className="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
+                <p className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max. 2MB)</p>
+              </div>
+            )}
           </div>
 
           {/* Section B: Brand Colors */}
@@ -259,9 +293,13 @@ export const BrandSetup: React.FC = () => {
           {/* Mockup Header */}
           <div className="h-14 border-b border-gray-100 flex items-center justify-between px-6" style={{ backgroundColor: secondaryColor }}>
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: primaryColor }}>
-                {client.full_name?.substring(0, 2).toUpperCase()}
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded-full object-cover shadow-sm bg-white" />
+              ) : (
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-sm" style={{ backgroundColor: primaryColor }}>
+                  {client.full_name?.substring(0, 2).toUpperCase()}
+                </div>
+              )}
               <span className="font-bold text-gray-900">{client.full_name}</span>
             </div>
           </div>
