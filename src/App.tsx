@@ -24,7 +24,7 @@ import { useState, useEffect } from 'react';
 export type UserRole = 'admin' | 'client';
 
 function AuthenticatedApp() {
-  const { role, hasCompletedOrientation, fetchAvailableClients, availableClients } = useAuth();
+  const { role, hasCompletedOrientation, fetchAvailableClients, availableClients, activeClientId } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false);
@@ -52,7 +52,10 @@ function AuthenticatedApp() {
 
   // Determine active view from URL
   const pathParts = location.pathname.split('/');
-  const activeView = pathParts[2] || (role === 'admin' && availableClients.length === 0 ? 'clients' : 'dashboard');
+  let activeView = pathParts[2] || (role === 'admin' && availableClients.length === 0 ? 'clients' : 'dashboard');
+  if (role === 'admin' && pathParts[2] === 'clients' && pathParts[4]) {
+    activeView = pathParts[4];
+  }
 
   const setActiveView = (view: string) => {
     navigate(`/${role}/${view}`);
@@ -67,10 +70,17 @@ function AuthenticatedApp() {
           <Route path="clients/:id/brand" element={<BrandSetup />} />
           <Route path="clients/:id/campaigns" element={<CampaignsList />} />
           <Route path="clients/:id/campaigns/:campaignId" element={<CampaignDetail />} />
-          <Route path="brand" element={<Navigate to={`/admin/clients`} replace />} />
+          
+          <Route path="brand" element={
+            activeClientId ? <Navigate to={`/admin/clients/${activeClientId}/brand`} replace /> : <Navigate to={`/admin/clients`} replace />
+          } />
           
           {/* Client direct routes */}
-          <Route path="campaigns" element={role === 'client' ? <CampaignsList /> : <Navigate to={`/admin/clients`} replace />} />
+          <Route path="campaigns" element={
+            role === 'client' 
+              ? <CampaignsList /> 
+              : (activeClientId ? <Navigate to={`/admin/clients/${activeClientId}/campaigns`} replace /> : <Navigate to={`/admin/clients`} replace />)
+          } />
           <Route path="campaigns/:campaignId" element={role === 'client' ? <CampaignDetail /> : <Navigate to={`/admin/clients`} replace />} />
           
           <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard />} />
