@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Upload, Check, Video, Instagram } from 'lucide-react';
+import { Upload, Check, Video, Camera } from 'lucide-react';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -122,7 +122,7 @@ export const BrandSetup: React.FC = () => {
               >
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg ${networks.instagram ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                    <Instagram size={20} />
+                    <Camera size={20} />
                   </div>
                   <span className={`font-semibold text-sm ${networks.instagram ? 'text-gray-900' : 'text-gray-500'}`}>Instagram</span>
                 </div>
