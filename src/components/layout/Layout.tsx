@@ -23,11 +23,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeView, setActiveV
       brandSettings = adminClient?.brand_settings;
     }
 
-    if (brandSettings) {
+    if (brandSettings && brandSettings.primaryColor) {
       document.documentElement.style.setProperty('--brand-primary', brandSettings.primaryColor);
-      document.documentElement.style.setProperty('--brand-accent', brandSettings.accentColor);
-      // Optional: Set font family if supported in Tailwind config
-      // document.documentElement.style.setProperty('--font-brand', `"${brandSettings.font}", sans-serif`);
+      document.documentElement.style.setProperty('--brand-accent', brandSettings.accentColor || '#F59E0B');
     } else {
       // Reset to defaults
       document.documentElement.style.removeProperty('--brand-primary');
