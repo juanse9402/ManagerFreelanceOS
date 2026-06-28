@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -41,7 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<'admin' | 'client'>('client');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [profileName, setProfileName] = useState('');
-  const [hasCompletedOrientation, setHasCompletedOrientation] = useState(true);
+  const [hasCompletedOrientation, setHasCompletedOrientationState] = useState(true);
+  const orientationCompletedLocally = useRef(false);
+  
+  const setHasCompletedOrientation = (val: boolean) => {
+    if (val) orientationCompletedLocally.current = true;
+    setHasCompletedOrientationState(val);
+  };
   
   // Workspace State
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -60,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole(data.role as 'admin' | 'client');
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
         setProfileName(data.full_name || '');
-        setHasCompletedOrientation(data.has_completed_orientation ?? true);
+        setHasCompletedOrientationState(orientationCompletedLocally.current ? true : (data.has_completed_orientation ?? true));
         setClientProfile(data);
         
         if (data.role === 'admin') {
