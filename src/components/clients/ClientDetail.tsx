@@ -39,7 +39,10 @@ export const ClientDetail: React.FC = () => {
             </div>
           </div>
           
-          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center space-x-2">
+          <button 
+            onClick={() => setActiveTab('Brand Setup')}
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center space-x-2"
+          >
             <Settings size={16} />
             <span>Edit Client</span>
           </button>
