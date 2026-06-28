@@ -122,10 +122,7 @@ export const RegisterView: React.FC = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-gray-50 border-r border-gray-100 p-12 flex-col justify-between">
         <div>
           <div className="flex items-center space-x-2 mb-12">
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg leading-none">M</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Manager OS</span>
+            <img src="/logo.png" alt="Kameleoia" className="h-8 object-contain" />
           </div>
           
           <h1 className="text-4xl font-bold text-gray-900 mb-6 leading-tight">

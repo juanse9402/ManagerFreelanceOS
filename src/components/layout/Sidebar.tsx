@@ -150,10 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
       <div className="w-64 bg-white border-r border-gray-100 flex-col font-sans h-full shadow-sm z-10 hidden md:flex">
         <div className="h-16 flex items-center px-6 border-b border-gray-100 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-tr from-[var(--brand-primary)] to-[var(--brand-accent)] rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
-              F
-            </div>
-            <span className="font-bold text-xl tracking-tight text-[var(--text-primary)]">FreelanceOS</span>
+            <img src="/logo.png" alt="Kameleoia" className="h-8 object-contain" />
           </div>
         </div>
         

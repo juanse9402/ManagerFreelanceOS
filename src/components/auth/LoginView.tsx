@@ -68,16 +68,15 @@ export const LoginView: React.FC = () => {
               className="w-20 h-20 object-contain rounded-xl shadow-sm animate-in fade-in zoom-in duration-500"
             />
           ) : (
-            <div 
-              className="w-16 h-16 rounded-2xl shadow-lg flex items-center justify-center transform -rotate-6 transition-all duration-500"
-              style={{ background: isClientMode ? brandColor : 'linear-gradient(to top right, #000, #333)' }}
-            >
-              <Activity className="text-white w-8 h-8 rotate-6" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Kameleoia" 
+              className="w-48 h-auto object-contain transition-all duration-500"
+            />
           )}
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 tracking-tight transition-colors">
-          {isClientMode ? 'Welcome back.' : 'Manager OS'}
+          {isClientMode ? 'Welcome back.' : 'Welcome to your Dashboard'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           {isClientMode ? 'Let\'s review your content.' : 'Sign in to your account'}

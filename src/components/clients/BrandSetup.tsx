@@ -26,21 +26,21 @@ export const BrandSetup: React.FC = () => {
   const [primaryColor, setPrimaryColor] = useState(client?.brand_settings?.primaryColor || '#8B5CF6');
   const [secondaryColor, setSecondaryColor] = useState(client?.brand_settings?.secondaryColor || '#F3F4F6');
   const [accentColor, setAccentColor] = useState(client?.brand_settings?.accentColor || '#F59E0B');
-  
+
   const [font, setFont] = useState('Inter');
   const [networks, setNetworks] = useState({
     instagram: client?.brand_settings?.networks?.instagram ?? true,
     tiktok: client?.brand_settings?.networks?.tiktok ?? false,
     facebook: client?.brand_settings?.networks?.facebook ?? false
   });
-  
+
   const [handles, setHandles] = useState({
     instagram: client?.brand_settings?.handles?.instagram || '',
     tiktok: client?.brand_settings?.handles?.tiktok || '',
     facebook: client?.brand_settings?.handles?.facebook || ''
   });
-  
-  const [oauthState, setOauthState] = useState<{isOpen: boolean, network: 'instagram' | 'tiktok' | 'facebook' | null}>({
+
+  const [oauthState, setOauthState] = useState<{ isOpen: boolean, network: 'instagram' | 'tiktok' | 'facebook' | null }>({
     isOpen: false,
     network: null
   });
@@ -55,16 +55,16 @@ export const BrandSetup: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     let finalLogoUrl = logoUrl;
-    
+
     try {
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `client_logos/${client.id}_${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('content_media')
           .upload(fileName, logoFile);
-          
+
         if (!uploadError) {
           const { data } = supabase.storage.from('content_media').getPublicUrl(fileName);
           finalLogoUrl = data.publicUrl;
@@ -118,19 +118,19 @@ export const BrandSetup: React.FC = () => {
           <div className="mb-10">
             <h3 className="text-sm font-bold text-gray-900 mb-1">Client Logo</h3>
             <p className="text-xs text-gray-500 mb-3">Appears in the client's portal header, sidebar, and invitation email.</p>
-            
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
+
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileChange}
             />
-            
+
             {logoUrl ? (
               <div className="border-2 border-gray-200 rounded-xl p-4 text-center relative group">
                 <img src={logoUrl} alt="Logo preview" className="h-20 object-contain mx-auto mb-3 rounded" />
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   className="bg-white border border-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50"
                 >
@@ -138,7 +138,7 @@ export const BrandSetup: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-[var(--brand-primary)]/50 hover:bg-[var(--brand-primary)]/5 transition-all cursor-pointer group"
               >
@@ -152,7 +152,7 @@ export const BrandSetup: React.FC = () => {
           {/* Section B: Brand Colors */}
           <div className="mb-10">
             <h3 className="text-sm font-bold text-gray-900 mb-4">Brand Colors</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Primary Color</label>
@@ -162,7 +162,7 @@ export const BrandSetup: React.FC = () => {
                   <input type="text" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono w-28 uppercase" />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Secondary Color</label>
                 <p className="text-[10px] text-gray-500 mb-2">Used for backgrounds, card borders, and supporting elements.</p>
@@ -193,7 +193,7 @@ export const BrandSetup: React.FC = () => {
                 { name: 'Playfair Display', desc: 'Editorial' },
                 { name: 'Sora', desc: 'Minimal' }
               ].map(f => (
-                <div 
+                <div
                   key={f.name}
                   onClick={() => setFont(f.name)}
                   className={`border rounded-xl p-4 cursor-pointer transition-all ${font === f.name ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 ring-1 ring-[var(--brand-primary)]' : 'border-gray-200 hover:border-gray-300'}`}
@@ -214,11 +214,11 @@ export const BrandSetup: React.FC = () => {
           <div className="mb-10">
             <h3 className="text-sm font-bold text-gray-900 mb-1">Connected Social Networks</h3>
             <p className="text-xs text-gray-500 mb-4">Select which networks are active for this client. Only active networks appear in their portal's calendar and feed simulator.</p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4">
               {/* Instagram */}
               <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.instagram ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setNetworks(prev => ({ ...prev, instagram: !prev.instagram }))}
                 >
@@ -245,8 +245,8 @@ export const BrandSetup: React.FC = () => {
                             <p className="text-xs text-gray-500">@{handles.instagram}</p>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => setHandles(prev => ({...prev, instagram: ''}))}
+                        <button
+                          onClick={() => setHandles(prev => ({ ...prev, instagram: '' }))}
                           className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
                         >
                           <LogOut size={14} className="mr-1" /> Disconnect
@@ -255,7 +255,7 @@ export const BrandSetup: React.FC = () => {
                     ) : (
                       <div className="text-center">
                         <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
-                        <button 
+                        <button
                           onClick={() => setOauthState({ isOpen: true, network: 'instagram' })}
                           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                         >
@@ -269,7 +269,7 @@ export const BrandSetup: React.FC = () => {
 
               {/* TikTok */}
               <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.tiktok ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setNetworks(prev => ({ ...prev, tiktok: !prev.tiktok }))}
                 >
@@ -296,8 +296,8 @@ export const BrandSetup: React.FC = () => {
                             <p className="text-xs text-gray-500">@{handles.tiktok}</p>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => setHandles(prev => ({...prev, tiktok: ''}))}
+                        <button
+                          onClick={() => setHandles(prev => ({ ...prev, tiktok: '' }))}
                           className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
                         >
                           <LogOut size={14} className="mr-1" /> Disconnect
@@ -306,7 +306,7 @@ export const BrandSetup: React.FC = () => {
                     ) : (
                       <div className="text-center">
                         <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
-                        <button 
+                        <button
                           onClick={() => setOauthState({ isOpen: true, network: 'tiktok' })}
                           className="w-full flex items-center justify-center space-x-2 bg-black text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                         >
@@ -317,10 +317,10 @@ export const BrandSetup: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Facebook */}
               <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.facebook ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
-                <div 
+                <div
                   className="flex items-center justify-between cursor-pointer"
                   onClick={() => setNetworks(prev => ({ ...prev, facebook: !prev.facebook }))}
                 >
@@ -347,8 +347,8 @@ export const BrandSetup: React.FC = () => {
                             <p className="text-xs text-gray-500">{handles.facebook}</p>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => setHandles(prev => ({...prev, facebook: ''}))}
+                        <button
+                          onClick={() => setHandles(prev => ({ ...prev, facebook: '' }))}
                           className="text-xs font-semibold text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors flex items-center"
                         >
                           <LogOut size={14} className="mr-1" /> Disconnect
@@ -357,7 +357,7 @@ export const BrandSetup: React.FC = () => {
                     ) : (
                       <div className="text-center">
                         <p className="text-xs text-gray-500 mb-3">Connect your account to allow publishing.</p>
-                        <button 
+                        <button
                           onClick={() => setOauthState({ isOpen: true, network: 'facebook' })}
                           className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white font-bold text-sm py-2.5 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                         >
@@ -385,7 +385,7 @@ export const BrandSetup: React.FC = () => {
               </div>
             )}
             {!showToast && <div></div>}
-            <button 
+            <button
               onClick={handleSave}
               disabled={isSaving}
               className={`text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-all text-sm ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
@@ -400,7 +400,7 @@ export const BrandSetup: React.FC = () => {
       {/* Right Column - Live Preview */}
       <div className="w-[450px] bg-gray-50 hidden lg:flex flex-col p-8">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-6 text-center">Client Portal Preview</h3>
-        
+
         {/* Mockup Container */}
         <div className="flex-1 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col" style={{ fontFamily: font }}>
           {/* Mockup Header */}
@@ -416,10 +416,10 @@ export const BrandSetup: React.FC = () => {
               <span className="font-bold text-gray-900">{client.full_name}</span>
             </div>
           </div>
-          
+
           <div className="flex-1 p-6" style={{ backgroundColor: secondaryColor }}>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Welcome back, {client.full_name}.</h2>
-            
+
             {/* Mockup Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-4 pointer-events-none">
               <div className="flex justify-between items-center mb-4">
@@ -432,9 +432,9 @@ export const BrandSetup: React.FC = () => {
             </div>
 
             {/* Mockup Button */}
-            <button 
+            <button
               onClick={() => alert("This is a preview of the client's portal. It is not interactive. To review content yourself, use the 'Approvals' or 'Calendar' tabs in the left sidebar.")}
-              className="w-full py-2.5 rounded-lg text-white text-center font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity" 
+              className="w-full py-2.5 rounded-lg text-white text-center font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity"
               style={{ backgroundColor: primaryColor }}
             >
               Review Pending Content
@@ -448,7 +448,7 @@ export const BrandSetup: React.FC = () => {
       </div>
 
       {/* OAuth Popup Modal */}
-      <OAuthPopup 
+      <OAuthPopup
         isOpen={oauthState.isOpen}
         network={oauthState.network}
         onClose={() => setOauthState({ isOpen: false, network: null })}
