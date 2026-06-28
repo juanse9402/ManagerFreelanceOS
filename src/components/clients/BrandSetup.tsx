@@ -18,6 +18,12 @@ export const BrandSetup: React.FC = () => {
     tiktok: false,
     facebook: false
   });
+  
+  const [handles, setHandles] = useState({
+    instagram: '',
+    tiktok: '',
+    facebook: ''
+  });
   const [showToast, setShowToast] = useState(false);
 
   if (!client) {
@@ -119,50 +125,103 @@ export const BrandSetup: React.FC = () => {
             <h3 className="text-sm font-bold text-gray-900 mb-1">Connected Social Networks</h3>
             <p className="text-xs text-gray-500 mb-4">Select which networks are active for this client. Only active networks appear in their portal's calendar and feed simulator.</p>
             
-            <div className="flex space-x-4">
-              <div 
-                onClick={() => setNetworks(prev => ({ ...prev, instagram: !prev.instagram }))}
-                className={`flex-1 border rounded-xl p-4 cursor-pointer transition-all flex items-center justify-between ${networks.instagram ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${networks.instagram ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                    <Camera size={20} />
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Instagram */}
+              <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.instagram ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setNetworks(prev => ({ ...prev, instagram: !prev.instagram }))}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${networks.instagram ? 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <Camera size={20} />
+                    </div>
+                    <span className={`font-semibold text-sm ${networks.instagram ? 'text-gray-900' : 'text-gray-500'}`}>Instagram</span>
                   </div>
-                  <span className={`font-semibold text-sm ${networks.instagram ? 'text-gray-900' : 'text-gray-500'}`}>Instagram</span>
+                  <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.instagram ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.instagram ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
                 </div>
-                <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.instagram ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.instagram ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                </div>
+                {networks.instagram && (
+                  <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
+                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">Instagram Handle</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">@</span>
+                      <input 
+                        type="text" 
+                        value={handles.instagram}
+                        onChange={(e) => setHandles(prev => ({...prev, instagram: e.target.value}))}
+                        placeholder="username" 
+                        className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div 
-                onClick={() => setNetworks(prev => ({ ...prev, tiktok: !prev.tiktok }))}
-                className={`flex-1 border rounded-xl p-4 cursor-pointer transition-all flex items-center justify-between ${networks.tiktok ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${networks.tiktok ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
-                    <Video size={20} />
+              {/* TikTok */}
+              <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.tiktok ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setNetworks(prev => ({ ...prev, tiktok: !prev.tiktok }))}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${networks.tiktok ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <Video size={20} />
+                    </div>
+                    <span className={`font-semibold text-sm ${networks.tiktok ? 'text-gray-900' : 'text-gray-500'}`}>TikTok</span>
                   </div>
-                  <span className={`font-semibold text-sm ${networks.tiktok ? 'text-gray-900' : 'text-gray-500'}`}>TikTok</span>
+                  <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.tiktok ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.tiktok ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
                 </div>
-                <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.tiktok ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.tiktok ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                </div>
+                {networks.tiktok && (
+                  <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
+                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">TikTok Handle</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">@</span>
+                      <input 
+                        type="text" 
+                        value={handles.tiktok}
+                        onChange={(e) => setHandles(prev => ({...prev, tiktok: e.target.value}))}
+                        placeholder="username" 
+                        className="w-full pl-8 pr-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               
-              <div 
-                onClick={() => setNetworks(prev => ({ ...prev, facebook: !prev.facebook }))}
-                className={`flex-1 border rounded-xl p-4 cursor-pointer transition-all flex items-center justify-between ${networks.facebook ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${networks.facebook ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                    <Globe size={20} />
+              {/* Facebook */}
+              <div className={`flex-1 border rounded-xl p-4 transition-all ${networks.facebook ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}>
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setNetworks(prev => ({ ...prev, facebook: !prev.facebook }))}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${networks.facebook ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <Globe size={20} />
+                    </div>
+                    <span className={`font-semibold text-sm ${networks.facebook ? 'text-gray-900' : 'text-gray-500'}`}>Facebook</span>
                   </div>
-                  <span className={`font-semibold text-sm ${networks.facebook ? 'text-gray-900' : 'text-gray-500'}`}>Facebook</span>
+                  <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.facebook ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.facebook ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
                 </div>
-                <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.facebook ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.facebook ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                </div>
+                {networks.facebook && (
+                  <div className="mt-4 pt-4 border-t border-[var(--brand-primary)]/20 animate-in fade-in slide-in-from-top-2">
+                    <label className="block text-xs font-semibold text-[var(--brand-primary)] mb-1">Facebook Page Name</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={handles.facebook}
+                        onChange={(e) => setHandles(prev => ({...prev, facebook: e.target.value}))}
+                        placeholder="Page Name" 
+                        className="w-full px-3 py-2 bg-white border border-[var(--brand-primary)]/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             {!networks.instagram && !networks.tiktok && !networks.facebook && (
