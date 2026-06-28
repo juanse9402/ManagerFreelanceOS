@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Building, CheckCircle2, Circle, Trophy, Calendar, Check } from 'lucide-react';
+import { Target, Building, Check } from 'lucide-react';
 
 interface ProjectProgressProps {
   project?: any;
@@ -21,99 +21,53 @@ export const ProjectProgress: React.FC<ProjectProgressProps> = ({ project, loadi
 
   if (isClientView && project) {
     return (
-      <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] border border-gray-100 overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-          <div>
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">Project Status</h2>
-            <p className="text-sm text-[var(--text-muted)] mt-1 flex items-center">
-              <Building size={14} className="mr-1" />
-              {project.name}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="text-3xl font-black text-[var(--brand-primary)]">{currentProgress}%</span>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Complete</p>
+      <div className="flex flex-col space-y-6">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-500 mb-2">Current phase: {currentPhase}</h3>
+          
+          <div className="flex h-12 w-full rounded-lg overflow-hidden border border-gray-200">
+            {phases.map((phase, idx) => {
+              const isCompleted = currentProgress >= phase.limit && currentProgress > 0 && phase.limit > 0 || (idx === 0 && currentProgress > 0);
+              const isActive = currentProgress < phase.limit && (idx === 0 || currentProgress >= phases[idx-1].limit);
+              
+              let bgClass = 'bg-gray-100';
+              let textClass = 'text-gray-400';
+              if (isCompleted) {
+                bgClass = 'bg-[var(--brand-primary)]';
+                textClass = 'text-white';
+              } else if (isActive) {
+                bgClass = 'bg-[var(--brand-primary)]/20';
+                textClass = 'text-[var(--brand-primary)] font-bold';
+              }
+
+              return (
+                <div 
+                  key={phase.name}
+                  className={`flex-1 flex flex-col items-center justify-center relative group cursor-default transition-colors border-r border-white/20 last:border-r-0 ${bgClass}`}
+                >
+                  <div className={`text-xs ${textClass} flex items-center space-x-1`}>
+                    {isCompleted && <Check size={12} className="shrink-0" strokeWidth={3} />}
+                    <span className="hidden sm:inline">{phase.name}</span>
+                  </div>
+                  
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 text-center pointer-events-none shadow-xl">
+                    <div className="font-bold mb-1">{phase.name}</div>
+                    <div className="text-gray-300">{phase.desc}</div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row">
-          {/* Phase Tracker */}
-          <div className="p-6 md:w-1/2 border-b md:border-b-0 md:border-r border-gray-100">
-            <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
-              <Target size={16} className="mr-2 text-[var(--brand-primary)]" />
-              Current Phase Map
-            </h3>
-            <div className="space-y-4">
-              {phases.map((phase, idx) => {
-                const isCompleted = currentProgress >= phase.limit && currentProgress > 0 && phase.limit > 0 || (idx === 0 && currentProgress > 0);
-                const isActive = currentProgress < phase.limit && (idx === 0 || currentProgress >= phases[idx-1].limit);
-                
-                return (
-                  <div key={idx} className={`flex ${isActive ? 'opacity-100' : isCompleted ? 'opacity-60' : 'opacity-40'}`}>
-                    <div className="flex flex-col items-center mr-3 relative">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 ${isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-[var(--brand-primary)] text-white ring-4 ring-[var(--brand-primary)]/20' : 'bg-gray-200 text-gray-500'}`}>
-                        {isCompleted ? <Check size={12} strokeWidth={3} /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
-                      </div>
-                      {idx < phases.length - 1 && (
-                        <div className={`w-0.5 h-full absolute top-6 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}></div>
-                      )}
-                    </div>
-                    <div className="pb-4">
-                      <p className={`text-sm font-bold ${isActive ? 'text-[var(--brand-primary)]' : 'text-gray-800'}`}>{phase.name}</p>
-                      {isActive && <p className="text-xs text-gray-500 mt-1">{phase.desc}</p>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">This week's tasks — 3 of 5 completed</h3>
+          <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-2 border border-gray-200">
+            <div className="h-full bg-[var(--brand-primary)] rounded-full transition-all duration-500" style={{ width: '60%' }}></div>
           </div>
-
-          {/* Right Column: Weekly Checklist & Achievements */}
-          <div className="p-6 md:w-1/2 flex flex-col gap-6 bg-gray-50/50">
-            
-            {/* Weekly Checklist */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <Calendar size={16} className="mr-2 text-blue-500" />
-                This Week's Focus
-              </h3>
-              <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm space-y-2">
-                <div className="flex items-start">
-                  <CheckCircle2 size={16} className="text-green-500 mr-2 shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-700 line-through opacity-70">Approve content strategy</p>
-                </div>
-                <div className="flex items-start">
-                  <Circle size={16} className="text-gray-300 mr-2 shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-800 font-medium">Review Q3 visual assets</p>
-                </div>
-                <div className="flex items-start">
-                  <Circle size={16} className="text-gray-300 mr-2 shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-800 font-medium">Confirm budget for ads</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Achievements Log */}
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center">
-                <Trophy size={16} className="mr-2 text-amber-500" />
-                Milestones
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center p-2.5 bg-amber-50 rounded-lg border border-amber-100">
-                  <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-3 shrink-0">
-                    <Trophy size={14} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-amber-900">First Review Completed</p>
-                    <p className="text-[10px] text-amber-700">Awesome job staying on track!</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
+          <p className="text-xs text-gray-500">More than halfway through this week's goals.</p>
         </div>
       </div>
     );

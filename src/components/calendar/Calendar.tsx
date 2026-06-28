@@ -202,27 +202,42 @@ export const CalendarView: React.FC = () => {
                     };
                     
                     // Platform styling
-                    const isIg = event.platform === 'Instagram';
+                    const getPlatformStyles = (platform: string) => {
+                      switch (platform?.toLowerCase()) {
+                        case 'instagram': return { border: 'border-pink-200 hover:border-pink-400', strip: 'bg-gradient-to-b from-pink-500 to-purple-500', text: 'text-pink-700' };
+                        case 'tiktok': return { border: 'border-cyan-200 hover:border-cyan-400', strip: 'bg-gradient-to-b from-black to-cyan-500', text: 'text-slate-900' };
+                        case 'facebook': return { border: 'border-blue-200 hover:border-blue-400', strip: 'bg-blue-600', text: 'text-blue-700' };
+                        case 'linkedin': return { border: 'border-indigo-200 hover:border-indigo-400', strip: 'bg-indigo-800', text: 'text-indigo-900' };
+                        case 'x': return { border: 'border-gray-300 hover:border-gray-500', strip: 'bg-black', text: 'text-black' };
+                        default: return { border: 'border-slate-200 hover:border-slate-400', strip: 'bg-gray-400', text: 'text-slate-800' };
+                      }
+                    };
+                    
+                    const pStyles = getPlatformStyles(event.platform);
+                    const isInReview = event.status === 'In Review';
                     
                     return (
                       <div 
                         key={event.id}
                         onClick={() => setSelectedEvent(event)}
-                        className={`text-[11px] p-1.5 rounded cursor-pointer border shadow-sm transition-all hover:shadow hover:-translate-y-px relative pl-3 overflow-hidden ${
-                          isIg 
-                            ? 'bg-white border-pink-100 hover:border-pink-300' 
-                            : 'bg-white border-slate-200 hover:border-slate-400'
-                        }`}
+                        className={`text-[11px] p-1.5 rounded cursor-pointer border shadow-sm transition-all hover:shadow hover:-translate-y-px relative pl-3 overflow-hidden bg-white ${pStyles.border} ${isInReview ? 'ring-1 ring-amber-400 ring-offset-1 shadow-[0_0_8px_rgba(251,191,36,0.5)]' : ''}`}
                       >
                         {/* Platform left border strip */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${isIg ? 'bg-gradient-to-b from-pink-500 to-orange-400' : 'bg-black'}`}></div>
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${pStyles.strip}`}></div>
                         
                         <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <span className={`font-bold truncate ${isIg ? 'text-pink-700' : 'text-slate-800'}`}>
+                          <span className={`font-bold truncate ${pStyles.text}`}>
                             {event.type}
                           </span>
                           <span className="flex-shrink-0 mt-1" title={`Status: ${event.status}`}>
-                            <span className={`block w-1.5 h-1.5 rounded-full ${getStatusColor(event.status)}`}></span>
+                            {isInReview ? (
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                              </span>
+                            ) : (
+                              <span className={`block w-1.5 h-1.5 rounded-full ${getStatusColor(event.status)}`}></span>
+                            )}
                           </span>
                         </div>
                         <div className="text-gray-600 truncate font-medium">

@@ -15,6 +15,7 @@ interface AuthContextType {
   setActiveClientId: (id: string | null) => void;
   availableClients: any[];
   fetchAvailableClients: () => Promise<void>;
+  clientProfile: any | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,7 +30,8 @@ const AuthContext = createContext<AuthContextType>({
   activeClientId: null,
   setActiveClientId: () => {},
   availableClients: [],
-  fetchAvailableClients: async () => {}
+  fetchAvailableClients: async () => {},
+  clientProfile: null
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Workspace State
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [availableClients, setAvailableClients] = useState<any[]>([]);
+  const [clientProfile, setClientProfile] = useState<any | null>(null);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -58,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
         setProfileName(data.full_name || '');
         setHasCompletedOrientation(data.has_completed_orientation ?? true);
+        setClientProfile(data);
         
         if (data.role === 'admin') {
           fetchAvailableClients();
@@ -124,7 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeClientId,
       setActiveClientId,
       availableClients,
-      fetchAvailableClients
+      fetchAvailableClients,
+      clientProfile
     }}>
       {children}
     </AuthContext.Provider>

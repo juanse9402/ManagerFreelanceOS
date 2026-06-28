@@ -68,7 +68,10 @@ function AuthenticatedApp() {
           <Route path="clients/:id/campaigns" element={<CampaignsList />} />
           <Route path="clients/:id/campaigns/:campaignId" element={<CampaignDetail />} />
           <Route path="brand" element={<Navigate to={`/admin/clients`} replace />} />
-          <Route path="campaigns" element={<Navigate to={`/admin/clients`} replace />} />
+          
+          {/* Client direct routes */}
+          <Route path="campaigns" element={role === 'client' ? <CampaignsList /> : <Navigate to={`/admin/clients`} replace />} />
+          <Route path="campaigns/:campaignId" element={role === 'client' ? <CampaignDetail /> : <Navigate to={`/admin/clients`} replace />} />
           
           <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard />} />
           <Route path="calendar" element={<CalendarView />} />

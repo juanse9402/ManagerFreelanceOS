@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Camera, MessageSquare, Clock, CheckCircle, Trash2, History } from 'lucide-react';
+import { X, Camera, MessageSquare, Clock, CheckCircle, Trash2, History, Smartphone, Monitor } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { VersionHistoryPanel } from '../preview/VersionHistoryPanel';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ContentDrawerProps {
   isOpen: boolean;
@@ -11,10 +12,12 @@ interface ContentDrawerProps {
 }
 
 export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, item, onUpdate }) => {
+  const { role } = useAuth();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isAddingPin, setIsAddingPin] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
   const [activePinCoordinates, setActivePinCoordinates] = useState<{x: number, y: number} | null>(null);
   const [localComments, setLocalComments] = useState([{
     id: 1,
@@ -125,14 +128,16 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
             {item.platform === 'Instagram' ? (
               <Camera size={18} className="mr-2 text-pink-600" />
             ) : (
-              <span className="mr-2 font-bold bg-black text-white px-1.5 py-0.5 rounded text-[10px]">TikTok</span>
+              <span className="mr-2 font-bold bg-black text-white px-1.5 py-0.5 rounded text-[10px] uppercase">{item.platform}</span>
             )}
             Content Review
           </h2>
           <div className="flex items-center space-x-2">
-            <button onClick={handleDelete} className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors" title="Delete">
-              <Trash2 size={18} />
-            </button>
+            {role === 'admin' && (
+              <button onClick={handleDelete} className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors" title="Delete">
+                <Trash2 size={18} />
+              </button>
+            )}
             <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
               <X size={20} className="text-gray-500" />
             </button>
@@ -161,60 +166,76 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold text-gray-800">Media</h3>
-              <button 
-                onClick={() => {
-                  setIsAddingPin(!isAddingPin);
-                  if (isAddingPin) setActivePinCoordinates(null);
-                }}
-                className={`text-xs px-2 py-1 rounded font-medium transition-colors ${isAddingPin ? 'bg-[var(--brand-primary)] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              >
-                {isAddingPin ? 'Cancel Pin' : 'Add Annotation Pin'}
-              </button>
+              <div className="flex items-center space-x-2">
+                <div className="flex bg-gray-100 rounded p-0.5">
+                  <button 
+                    onClick={() => setPreviewMode('mobile')}
+                    className={`p-1 rounded ${previewMode === 'mobile' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-400 hover:text-gray-600'}`}
+                    title="Mobile Preview"
+                  >
+                    <Smartphone size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setPreviewMode('desktop')}
+                    className={`p-1 rounded ${previewMode === 'desktop' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-400 hover:text-gray-600'}`}
+                    title="Desktop Preview"
+                  >
+                    <Monitor size={14} />
+                  </button>
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsAddingPin(!isAddingPin);
+                    if (isAddingPin) setActivePinCoordinates(null);
+                  }}
+                  className={`text-xs px-2 py-1 rounded font-medium transition-colors ${isAddingPin ? 'bg-[var(--brand-primary)] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  {isAddingPin ? 'Cancel Pin' : 'Add Annotation Pin'}
+                </button>
+              </div>
             </div>
             
-            <div 
-              onClick={handleImageClick}
-              className={`w-full aspect-[4/5] bg-gray-100 rounded-xl relative overflow-hidden flex items-center justify-center border border-gray-200 ${isAddingPin ? 'cursor-crosshair ring-2 ring-[var(--brand-primary)]' : ''}`}
-            >
-              {item.image_url ? (
-                <img 
-                  src={item.image_url} 
-                  alt="Contenido"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="text-gray-400 flex flex-col items-center">
-                  <Camera size={32} className="mb-2" />
-                  <span className="text-sm font-medium">No Media</span>
-                </div>
-              )}
+            <div className={`w-full bg-gray-100 rounded-xl relative flex items-center justify-center border border-gray-200 overflow-hidden mx-auto transition-all duration-300 ${isAddingPin ? 'cursor-crosshair ring-2 ring-[var(--brand-primary)]' : ''} ${previewMode === 'mobile' ? 'aspect-[4/5] max-w-sm' : 'aspect-video'}`}>
+              <div className="w-full h-full relative" onClick={handleImageClick}>
+                {item.image_url ? (
+                  <img 
+                    src={item.image_url} 
+                    alt="Contenido"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-gray-400 flex flex-col items-center justify-center h-full">
+                    <Camera size={32} className="mb-2" />
+                    <span className="text-sm font-medium">No Media</span>
+                  </div>
+                )}
 
-              {/* Render existing pins */}
-              {unmountedPins.map((comment, index) => (
-                <div 
-                  key={comment.id}
-                  className="absolute w-6 h-6 bg-[var(--brand-primary)] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md transform -translate-x-1/2 -translate-y-1/2 cursor-pointer border-2 border-white"
-                  style={{ left: `${comment.pinCoordinates!.x}%`, top: `${comment.pinCoordinates!.y}%` }}
-                  title={comment.text}
-                >
-                  {index + 1}
-                </div>
-              ))}
+                {/* Render existing pins */}
+                {unmountedPins.map((comment, index) => (
+                  <div 
+                    key={comment.id}
+                    className="absolute w-6 h-6 bg-[var(--brand-primary)] text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md transform -translate-x-1/2 -translate-y-1/2 cursor-pointer border-2 border-white pointer-events-none"
+                    style={{ left: `${comment.pinCoordinates!.x}%`, top: `${comment.pinCoordinates!.y}%` }}
+                  >
+                    {index + 1}
+                  </div>
+                ))}
 
-              {/* Render active pin being placed */}
-              {activePinCoordinates && (
-                <div 
-                  className="absolute w-6 h-6 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md transform -translate-x-1/2 -translate-y-1/2 border-2 border-white animate-pulse"
-                  style={{ left: `${activePinCoordinates.x}%`, top: `${activePinCoordinates.y}%` }}
-                >
-                  *
-                </div>
-              )}
+                {/* Render active pin being placed */}
+                {activePinCoordinates && (
+                  <div 
+                    className="absolute w-6 h-6 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md transform -translate-x-1/2 -translate-y-1/2 border-2 border-white animate-pulse pointer-events-none"
+                    style={{ left: `${activePinCoordinates.x}%`, top: `${activePinCoordinates.y}%` }}
+                  >
+                    *
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Copy / Caption */}
-          <div className="mb-6">
+          <div className="mb-6 mt-4">
             <h3 className="text-sm font-bold text-gray-800 mb-2">Copy / Caption</h3>
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
               {item.description || 'Sin texto'}
@@ -311,10 +332,12 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
         
         {/* Actions */}
         <div className="p-4 border-t border-gray-100 bg-white flex space-x-3 shrink-0">
-          <button onClick={() => setIsHistoryOpen(true)} className="py-2.5 px-3 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors" title="View Version History">
-            <History size={18} />
-          </button>
-          <button onClick={() => handleUpdateStatus('Changes Requested')} className="flex-1 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-lg text-sm hover:bg-gray-50 transition-colors">
+          {role === 'admin' && (
+            <button onClick={() => setIsHistoryOpen(true)} className="py-2.5 px-3 border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors" title="View Version History">
+              <History size={18} />
+            </button>
+          )}
+          <button onClick={() => handleUpdateStatus('Changes Requested')} className="flex-1 py-2.5 border border-[var(--brand-primary)] text-[var(--brand-primary)] font-semibold rounded-lg text-sm hover:bg-[var(--brand-primary)]/10 transition-colors">
             Request Changes
           </button>
           <button onClick={() => handleUpdateStatus('Approved')} className="flex-1 py-2.5 bg-[var(--brand-primary)] text-white font-semibold rounded-lg text-sm hover:bg-[var(--brand-primary)]/90 transition-colors">
