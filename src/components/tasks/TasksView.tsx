@@ -1,219 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  DndContext, 
-  closestCorners, 
-  KeyboardSensor, 
-  PointerSensor, 
-  useSensor, 
-  useSensors,
-  DragOverlay,
-  defaultDropAnimationSideEffects
-} from '@dnd-kit/core';
-import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
-import { StatusColumn } from './StatusColumn';
-import { TaskCard } from './TaskCard';
-import { CreateTaskModal } from './CreateTaskModal';
-import type { TaskType } from './TaskCard';
-import { Plus, Filter, CheckSquare } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import React, { useState } from 'react';
+import { Filter, CheckSquare, Plus, Search, Calendar, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
-const columns = [
-  { id: 'todo', title: 'To Do', color: 'border-t-gray-400' },
-  { id: 'in_progress', title: 'In Progress', color: 'border-t-blue-500' },
-  { id: 'review', title: 'In Review', color: 'border-t-amber-500' },
-  { id: 'done', title: 'Done', color: 'border-t-green-500' },
-];
 
 export const TasksView: React.FC = () => {
   const { activeClientId } = useAuth();
-  const [tasks, setTasks] = useState<TaskType[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTasks();
-  }, [activeClientId]);
-
-  const fetchTasks = async () => {
-    if (!activeClientId) {
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('client_id', activeClientId);
-        
-      if (error) throw error;
-      
-      if (data) {
-        setTasks(data);
-      }
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [view, setView] = useState<'weekly' | 'daily'>('weekly');
+  const [tasks, setTasks] = useState<any[]>([]); // Placeholder for tasks
 
   const handleCreateTask = () => {
-    if (!activeClientId) {
-      alert("Please select a workspace client first.");
-      return;
-    }
-    setIsCreateModalOpen(true);
+    // Open task drawer
   };
 
-  const updateTaskStatus = async (taskId: string, newStatus: string) => {
-    await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId);
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
-  };
-
-  const handleDragOver = (event: any) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    const isActiveTask = active.data.current?.type === 'Task';
-    const isOverTask = over.data.current?.type === 'Task';
-    
-    if (isActiveTask && isOverTask) {
-      setTasks((prev) => {
-        const activeIndex = prev.findIndex((t) => t.id === activeId);
-        const overIndex = prev.findIndex((t) => t.id === overId);
-        
-        if (prev[activeIndex].status !== prev[overIndex].status) {
-          const newTasks = [...prev];
-          newTasks[activeIndex].status = prev[overIndex].status;
-          updateTaskStatus(activeId, prev[overIndex].status);
-          return arrayMove(newTasks, activeIndex, overIndex);
-        }
-        return arrayMove(prev, activeIndex, overIndex);
-      });
-    }
-
-    const isOverColumn = over.data.current?.type === undefined;
-    if (isActiveTask && isOverColumn) {
-      setTasks((prev) => {
-        const activeIndex = prev.findIndex((t) => t.id === activeId);
-        const newTasks = [...prev];
-        newTasks[activeIndex].status = String(overId);
-        updateTaskStatus(activeId, String(overId));
-        return arrayMove(newTasks, activeIndex, activeIndex); 
-      });
-    }
-  };
-
-  const handleDragEnd = (event: any) => {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeIndex = tasks.findIndex((t) => t.id === active.id);
-    const overIndex = tasks.findIndex((t) => t.id === over.id);
-
-    if (activeIndex !== overIndex) {
-      setTasks((tasks) => arrayMove(tasks, activeIndex, overIndex));
-    }
-  };
-
-  const activeTask = activeId ? tasks.find(t => t.id === activeId) : null;
+  if (!activeClientId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-2xl m-6 bg-gray-50/50">
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Select a Client</h3>
+        <p className="text-gray-500 text-center max-w-md">Please select a client from the workspace selector to view tasks.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-card)] flex flex-col h-[calc(100vh-120px)] overflow-hidden">
+    <div className="bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-card)] flex flex-col h-[calc(100vh-80px)] overflow-hidden m-4 sm:m-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 shrink-0">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Tasks Board</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Manage project tasks and track progress.</p>
+      {/* Header & Filter Bar */}
+      <div className="flex flex-col shrink-0 border-b border-gray-100">
+        <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Tasks</h2>
+          </div>
+          
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button 
+              onClick={() => setView('weekly')}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${view === 'weekly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Weekly Board
+            </button>
+            <button 
+              onClick={() => setView('daily')}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${view === 'daily' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Daily Checklist
+            </button>
+          </div>
         </div>
-        
-        <div className="flex space-x-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
-            <Filter size={16} />
-            <span>Filters</span>
-          </button>
-          <button 
-            onClick={handleCreateTask}
-            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-[var(--brand-primary)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--brand-primary)]/90 transition-colors shadow-sm"
-          >
-            <Plus size={16} />
-            <span>New Task</span>
-          </button>
+
+        {/* Filter Bar */}
+        <div className="px-6 pb-4 flex items-center space-x-3 overflow-x-auto custom-scrollbar">
+          <select className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] shrink-0">
+            <option>All Campaigns</option>
+          </select>
+          <select className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] shrink-0">
+            <option>Status: All</option>
+            <option>To Do</option>
+            <option>In Progress</option>
+            <option>In Review</option>
+            <option>Completed</option>
+          </select>
+          <select className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] shrink-0">
+            <option>Phase: All</option>
+          </select>
+          <div className="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 shrink-0">
+            <button className="p-1 hover:bg-gray-200 rounded"><ChevronLeft size={14} /></button>
+            <span className="text-sm font-medium px-2">This week</span>
+            <button className="p-1 hover:bg-gray-200 rounded"><ChevronRight size={14} /></button>
+          </div>
         </div>
       </div>
 
-      {/* Kanban Board or Empty State */}
-      <div className="flex-1 overflow-x-auto custom-scrollbar pb-4 -mx-2 px-2 relative">
-        {loading ? (
-          <div className="flex w-full items-center justify-center text-gray-500 font-medium h-full">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-2xl mx-2 bg-gray-50/50">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-auto bg-gray-50/30 p-6 relative">
+        {tasks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 animate-in fade-in">
             <div className="w-16 h-16 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mb-4">
               <CheckSquare size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No tasks found</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No tasks this week.</h3>
             <p className="text-gray-500 text-center max-w-md mb-6">
-              There are no tasks for this workspace yet. Create your first task to start organizing your project.
+              Add tasks to start tracking your progress.
             </p>
             <button 
               onClick={handleCreateTask}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-sm"
             >
               <Plus size={18} />
-              <span>Create First Task</span>
+              <span>Add Task</span>
             </button>
           </div>
         ) : (
-          <div className="flex gap-4 h-full min-w-max">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-            >
-              {columns.map(col => (
-                <StatusColumn 
-                  key={col.id}
-                  id={col.id}
-                  title={col.title}
-                  color={col.color}
-                  tasks={tasks.filter(t => t.status === col.id)}
-                />
-              ))}
-
-              <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
-                {activeTask ? <TaskCard task={activeTask} /> : null}
-              </DragOverlay>
-            </DndContext>
-          </div>
+          view === 'weekly' ? (
+            <div className="h-full">
+               {/* Weekly Board Layout Placeholder */}
+            </div>
+          ) : (
+            <div className="max-w-2xl mx-auto h-full">
+               {/* Daily Checklist Layout Placeholder */}
+            </div>
+          )
         )}
       </div>
-
-      <CreateTaskModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={fetchTasks}
-      />
     </div>
   );
 };

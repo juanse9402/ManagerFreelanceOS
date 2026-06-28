@@ -93,12 +93,18 @@ export const ApprovalsView: React.FC = () => {
                     <td colSpan={5} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                          <CheckCircle size={32} className="text-gray-300" />
+                           <CheckCircle size={32} className="text-gray-300" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">You're all caught up!</h3>
+                        <h3 className="text-lg font-bold text-gray-900 mb-1">Inbox zero!</h3>
                         <p className="text-sm text-gray-500 max-w-sm mb-4">
-                          There is no content waiting for your approval right now. We'll notify you when new posts are ready for review.
+                          No pending approvals. Enjoy your coffee.
                         </p>
+                        <button 
+                          onClick={() => window.location.href = '/admin/calendar'}
+                          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                          View Calendar
+                        </button>
                       </div>
                     </td>
                   </tr>

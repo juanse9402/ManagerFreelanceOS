@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings, ChevronDown, Building2 } from 'lucide-react';
+import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings, ChevronDown, Building2, Users, Palette, Megaphone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
@@ -11,18 +11,47 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, role }) => {
   const { profileName, activeClientId, setActiveClientId, availableClients } = useAuth();
   
-  const menuItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'calendar', icon: Calendar, label: 'Calendar' },
+  const workflowItems = [
+    { id: 'clients', icon: Users, label: 'Clients' },
+    { id: 'brand', icon: Palette, label: 'Brand Setup' },
+    { id: 'campaigns', icon: Megaphone, label: 'Campaigns' },
     { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
+    { id: 'calendar', icon: Calendar, label: 'Calendar' },
+    { id: 'preview', icon: Image, label: 'Preview & Feed' },
+    { id: 'approvals', icon: CheckCircle, label: 'Approvals' },
+  ];
+
+  const accountItems = [
+    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  ];
+
+  // For now, client keeps a simple flat menu until client profile redesign
+  const clientMenu = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'preview', icon: Image, label: 'Preview & Feed' },
     { id: 'approvals', icon: CheckCircle, label: 'Approvals' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
-  const filteredMenu = role === 'client' 
-    ? menuItems.filter(item => ['dashboard', 'preview', 'approvals', 'settings'].includes(item.id))
-    : menuItems;
+  const renderNavButton = (item: { id: string; icon: React.ElementType; label: string }) => {
+    const Icon = item.icon;
+    const isActive = activeView === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={() => setActiveView(item.id)}
+        className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+          isActive 
+            ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-semibold' 
+            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+      >
+        <Icon size={18} className={isActive ? 'text-[var(--brand-primary)]' : 'text-gray-400 group-hover:text-gray-600 transition-colors'} />
+        <span>{item.label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="w-64 bg-white border-r border-gray-100 flex flex-col font-sans h-full shadow-sm z-10 hidden md:flex">
@@ -39,19 +68,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
       {role === 'admin' && (
         <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/30">
           <div className="flex items-center justify-between mb-1.5 px-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Viewing Workspace</label>
-            <button 
-              onClick={() => {
-                // Open drawer logic needs to be lifted up or handled via global state/context.
-                // For now, we dispatch a custom event that App or Layout can listen to.
-                window.dispatchEvent(new CustomEvent('open-client-drawer'));
-              }}
-              className="text-[10px] font-bold text-[var(--brand-primary)] hover:underline uppercase tracking-wider flex items-center"
-            >
-              + New
-            </button>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">WORKSPACE</label>
           </div>
-          <div className="relative">
+          <div className="relative mb-2">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Building2 size={14} className="text-gray-400" />
             </div>
@@ -69,32 +88,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
               <ChevronDown size={14} className="text-gray-400" />
             </div>
           </div>
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('open-client-drawer'))}
+            className="w-full text-center py-2 text-sm font-semibold text-[var(--brand-primary)] border border-dashed border-[var(--brand-primary)]/30 rounded-lg hover:bg-[var(--brand-primary)]/5 transition-colors flex items-center justify-center"
+          >
+            + New Client
+          </button>
         </div>
       )}
       
       <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-2">Main Menu</p>
-        <nav className="space-y-1.5">
-          {filteredMenu.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-                  isActive 
-                    ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] font-semibold' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <Icon size={18} className={isActive ? 'text-[var(--brand-primary)]' : 'text-gray-400 group-hover:text-gray-600 transition-colors'} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {role === 'admin' ? (
+          <>
+            <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">WORKFLOW</p>
+            <nav className="space-y-1.5 mb-6">
+              {workflowItems.map(renderNavButton)}
+            </nav>
+            <p className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">ACCOUNT</p>
+            <nav className="space-y-1.5">
+              {accountItems.map(renderNavButton)}
+            </nav>
+          </>
+        ) : (
+          <nav className="space-y-1.5">
+            {clientMenu.map(renderNavButton)}
+          </nav>
+        )}
       </div>
 
       <div className="shrink-0 p-4 border-t border-gray-100 bg-gray-50/50">

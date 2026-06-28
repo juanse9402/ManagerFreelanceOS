@@ -139,16 +139,16 @@ export const CalendarView: React.FC = () => {
             <div className="w-16 h-16 bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] rounded-full flex items-center justify-center mb-4">
               <Plus size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No content planned</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Nothing scheduled yet.</h3>
             <p className="text-gray-500 text-center max-w-md mb-6">
-              Your content calendar is currently empty. Start planning your social media strategy by creating your first post.
+              Add content pieces to see them here.
             </p>
             <button 
               onClick={handleCreateContent}
               className="flex items-center space-x-2 px-5 py-2.5 bg-[var(--brand-primary)] text-white rounded-xl font-medium hover:opacity-90 transition-opacity shadow-sm"
             >
               <Plus size={18} />
-              <span>Create First Content</span>
+              <span>Add Content</span>
             </button>
           </div>
         ) : null}

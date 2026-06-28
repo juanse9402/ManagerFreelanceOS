@@ -13,13 +13,18 @@ import { RegisterView } from './components/auth/RegisterView';
 import { ClientOrientation } from './components/auth/ClientOrientation';
 import { AdminWizard } from './components/onboarding/AdminWizard';
 import { ClientCreationDrawer } from './components/dashboard/ClientCreationDrawer';
+import { ClientsList } from './components/clients/ClientsList';
+import { ClientDetail } from './components/clients/ClientDetail';
+import { BrandSetup } from './components/clients/BrandSetup';
+import { CampaignsList } from './components/campaigns/CampaignsList';
+import { CampaignDetail } from './components/campaigns/CampaignDetail';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 export type UserRole = 'admin' | 'client';
 
 function AuthenticatedApp() {
-  const { role, hasCompletedOrientation, fetchAvailableClients } = useAuth();
+  const { role, hasCompletedOrientation, fetchAvailableClients, availableClients } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false);
@@ -29,6 +34,13 @@ function AuthenticatedApp() {
     window.addEventListener('open-client-drawer', handleOpenDrawer);
     return () => window.removeEventListener('open-client-drawer', handleOpenDrawer);
   }, []);
+
+  // First-time Login Logic: If no clients exist, default to /admin/clients
+  useEffect(() => {
+    if (role === 'admin' && location.pathname === '/admin/dashboard' && availableClients.length === 0) {
+      navigate('/admin/clients', { replace: true });
+    }
+  }, [role, location.pathname, availableClients, navigate]);
 
   // Redirect logic
   if (role === 'client' && location.pathname.startsWith('/admin')) {
@@ -40,7 +52,7 @@ function AuthenticatedApp() {
 
   // Determine active view from URL
   const pathParts = location.pathname.split('/');
-  const activeView = pathParts[2] || 'dashboard';
+  const activeView = pathParts[2] || (role === 'admin' && availableClients.length === 0 ? 'clients' : 'dashboard');
 
   const setActiveView = (view: string) => {
     navigate(`/${role}/${view}`);
@@ -50,13 +62,22 @@ function AuthenticatedApp() {
     <>
       <Layout activeView={activeView} setActiveView={setActiveView} role={role!}>
         <Routes>
+          <Route path="clients" element={<ClientsList />} />
+          <Route path="clients/:id" element={<ClientDetail />} />
+          <Route path="clients/:id/brand" element={<BrandSetup />} />
+          <Route path="clients/:id/campaigns" element={<CampaignsList />} />
+          <Route path="clients/:id/campaigns/:campaignId" element={<CampaignDetail />} />
+          <Route path="brand" element={<Navigate to={`/admin/clients`} replace />} />
+          <Route path="campaigns" element={<Navigate to={`/admin/clients`} replace />} />
+          
           <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard setActiveView={setActiveView} />} />
           <Route path="calendar" element={<CalendarView />} />
           <Route path="tasks" element={<TasksView />} />
           <Route path="preview" element={<PreviewView />} />
           <Route path="approvals" element={<ApprovalsView />} />
           <Route path="settings" element={<SettingsView />} />
-          <Route path="*" element={<Navigate to="dashboard" replace />} />
+          
+          <Route path="*" element={<Navigate to={role === 'admin' && availableClients.length === 0 ? 'clients' : 'dashboard'} replace />} />
         </Routes>
       </Layout>
       {role === 'client' && !hasCompletedOrientation && <ClientOrientation />}

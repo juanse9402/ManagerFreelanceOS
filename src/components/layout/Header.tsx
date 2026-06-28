@@ -13,6 +13,9 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasUnread, setHasUnread] = useState(true);
 
+  const { activeClientId, availableClients } = useAuth();
+  const activeClient = availableClients.find(c => c.id === activeClientId);
+
   return (
     <header className="h-16 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
       <div className="flex items-center">
@@ -27,6 +30,19 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
       </div>
 
       <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Active Client Indicator (Read-only) */}
+        {role === 'admin' && activeClient && (
+          <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-100">
+            <div 
+              className="w-4 h-4 rounded-full shadow-sm"
+              style={{ backgroundColor: activeClient.brand_settings?.primaryColor || '#8B5CF6' }}
+            ></div>
+            <span className="text-xs font-semibold text-gray-700 truncate max-w-[120px]">
+              {activeClient.full_name}
+            </span>
+          </div>
+        )}
+
         {/* Log Out Button */}
         <button 
           onClick={async () => await supabase.auth.signOut()}
@@ -36,30 +52,6 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
           <LogOut size={14} />
           <span>Log out ({role})</span>
         </button>
-
-        <div className="flex items-center space-x-2 bg-gray-50 rounded-full p-1 border border-gray-100">
-          <button 
-            onClick={() => setTheme('vibrante')}
-            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${theme === 'vibrante' ? 'bg-white shadow-sm ring-1 ring-gray-200' : 'hover:bg-gray-200'}`}
-            title="Tema Vibrante"
-          >
-            <div className="w-4 h-4 rounded-full bg-[#8B5CF6]"></div>
-          </button>
-          <button 
-            onClick={() => setTheme('calido')}
-            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${theme === 'calido' ? 'bg-white shadow-sm ring-1 ring-gray-200' : 'hover:bg-gray-200'}`}
-            title="Tema Cálido"
-          >
-            <div className="w-4 h-4 rounded-full bg-[#E17055]"></div>
-          </button>
-          <button 
-            onClick={() => setTheme('tecnologico')}
-            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${theme === 'tecnologico' ? 'bg-white shadow-sm ring-1 ring-gray-200' : 'hover:bg-gray-200'}`}
-            title="Tema Tecnológico"
-          >
-            <div className="w-4 h-4 rounded-full bg-[#0984E3]"></div>
-          </button>
-        </div>
 
         <div className="relative">
           <button 
