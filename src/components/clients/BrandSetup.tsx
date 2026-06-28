@@ -289,7 +289,7 @@ export const BrandSetup: React.FC = () => {
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-6 text-center">Client Portal Preview</h3>
         
         {/* Mockup Container */}
-        <div className="flex-1 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col pointer-events-none" style={{ fontFamily: font }}>
+        <div className="flex-1 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col" style={{ fontFamily: font }}>
           {/* Mockup Header */}
           <div className="h-14 border-b border-gray-100 flex items-center justify-between px-6" style={{ backgroundColor: secondaryColor }}>
             <div className="flex items-center space-x-2">
@@ -308,7 +308,7 @@ export const BrandSetup: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Welcome back, {client.full_name}.</h2>
             
             {/* Mockup Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-4 pointer-events-none">
               <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold text-gray-900">Project Progress</span>
                 <span className="text-xs font-bold px-2 py-1 rounded border" style={{ color: accentColor, borderColor: accentColor, backgroundColor: `${accentColor}10` }}>On Track</span>
@@ -319,9 +319,13 @@ export const BrandSetup: React.FC = () => {
             </div>
 
             {/* Mockup Button */}
-            <div className="w-full py-2.5 rounded-lg text-white text-center font-semibold text-sm shadow-sm" style={{ backgroundColor: primaryColor }}>
+            <button 
+              onClick={() => alert("This is a preview of the client's portal. It is not interactive. To review content yourself, use the 'Approvals' or 'Calendar' tabs in the left sidebar.")}
+              className="w-full py-2.5 rounded-lg text-white text-center font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity" 
+              style={{ backgroundColor: primaryColor }}
+            >
               Review Pending Content
-            </div>
+            </button>
           </div>
         </div>
 

@@ -45,7 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const orientationCompletedLocally = useRef(false);
   
   const setHasCompletedOrientation = (val: boolean) => {
-    if (val) orientationCompletedLocally.current = true;
+    if (val) {
+      orientationCompletedLocally.current = true;
+      if (user) {
+        localStorage.setItem(`orientation_completed_${user.id}`, 'true');
+      }
+    }
     setHasCompletedOrientationState(val);
   };
   
@@ -66,7 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setRole(data.role as 'admin' | 'client');
         setStatus(data.status as 'pending' | 'approved' | 'rejected');
         setProfileName(data.full_name || '');
-        setHasCompletedOrientationState(orientationCompletedLocally.current ? true : (data.has_completed_orientation ?? true));
+        
+        const localCompleted = localStorage.getItem(`orientation_completed_${userId}`) === 'true';
+        setHasCompletedOrientationState(
+          localCompleted || orientationCompletedLocally.current ? true : (data.has_completed_orientation ?? true)
+        );
+        
         setClientProfile(data);
         
         if (data.role === 'admin') {
