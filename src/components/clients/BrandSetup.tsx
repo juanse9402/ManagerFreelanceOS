@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Upload, Check, Video, Camera } from 'lucide-react';
+import { Upload, Check, Video, Camera, Facebook } from 'lucide-react';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +13,11 @@ export const BrandSetup: React.FC = () => {
   const [accentColor, setAccentColor] = useState(client?.brand_settings?.accentColor || '#F59E0B');
   
   const [font, setFont] = useState('Inter');
-  const [networks, setNetworks] = useState({ instagram: true, tiktok: true });
+  const [networks, setNetworks] = useState({
+    instagram: true,
+    tiktok: false,
+    facebook: false
+  });
   const [showToast, setShowToast] = useState(false);
 
   if (!client) {
@@ -145,8 +149,23 @@ export const BrandSetup: React.FC = () => {
                   <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.tiktok ? 'translate-x-4' : 'translate-x-0'}`}></div>
                 </div>
               </div>
+              
+              <div 
+                onClick={() => setNetworks(prev => ({ ...prev, facebook: !prev.facebook }))}
+                className={`flex-1 border rounded-xl p-4 cursor-pointer transition-all flex items-center justify-between ${networks.facebook ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5' : 'border-gray-200 bg-white'}`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${networks.facebook ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                    <Facebook size={20} />
+                  </div>
+                  <span className={`font-semibold text-sm ${networks.facebook ? 'text-gray-900' : 'text-gray-500'}`}>Facebook</span>
+                </div>
+                <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${networks.facebook ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${networks.facebook ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                </div>
+              </div>
             </div>
-            {!networks.instagram && !networks.tiktok && (
+            {!networks.instagram && !networks.tiktok && !networks.facebook && (
               <p className="text-xs text-orange-600 mt-3 font-medium">Enable at least one network to start planning content.</p>
             )}
           </div>
