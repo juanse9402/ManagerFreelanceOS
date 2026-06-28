@@ -70,7 +70,7 @@ function AuthenticatedApp() {
           <Route path="brand" element={<Navigate to={`/admin/clients`} replace />} />
           <Route path="campaigns" element={<Navigate to={`/admin/clients`} replace />} />
           
-          <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard setActiveView={setActiveView} />} />
+          <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard />} />
           <Route path="calendar" element={<CalendarView />} />
           <Route path="tasks" element={<TasksView />} />
           <Route path="preview" element={<PreviewView />} />

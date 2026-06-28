@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Upload, Check, Video } from 'lucide-react';
+import { Upload, Check, Video, Instagram } from 'lucide-react';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();

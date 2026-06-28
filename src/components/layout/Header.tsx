@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bell, Search, LogOut, X } from 'lucide-react';
-import { useTheme } from '../../theme/ThemeContext';
+
 import type { UserRole } from '../../App';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
