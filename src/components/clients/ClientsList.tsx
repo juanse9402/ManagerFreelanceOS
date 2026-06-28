@@ -1,13 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 export const ClientsList: React.FC = () => {
-  const { availableClients } = useAuth();
+  const { availableClients, fetchAvailableClients } = useAuth();
   const navigate = useNavigate();
+  const [pendingClients, setPendingClients] = useState<any[]>([]);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
-  if (availableClients.length === 0) {
+  const fetchPendingClients = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'client')
+      .eq('status', 'pending');
+      
+    if (data && !error) {
+      setPendingClients(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingClients();
+  }, []);
+
+  const handleApprove = async (clientId: string) => {
+    setApprovingId(clientId);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'approved' })
+        .eq('id', clientId);
+        
+      if (!error) {
+        await fetchAvailableClients(); // Refresh approved list
+        await fetchPendingClients(); // Refresh pending list
+      }
+    } catch (error) {
+      console.error('Error approving client:', error);
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  if (availableClients.length === 0 && pendingClients.length === 0) {
     return (
       <div className="min-h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
         <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
@@ -79,6 +117,49 @@ export const ClientsList: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {pendingClients.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Pending Approvals</h2>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50/50 border-b border-gray-100">
+                <tr>
+                  <th className="px-6 py-4 font-semibold text-gray-600">Client Name</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600">Email</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600">Registered</th>
+                  <th className="px-6 py-4 text-right font-semibold text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {pendingClients.map(client => (
+                  <tr key={client.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xs">
+                          {client.full_name?.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="font-semibold text-gray-900">{client.full_name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">{client.email || 'No email provided'}</td>
+                    <td className="px-6 py-4 text-gray-500">{new Date(client.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => handleApprove(client.id)}
+                        disabled={approvingId === client.id}
+                        className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-lg font-semibold hover:bg-emerald-100 transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {approvingId === client.id ? 'Approving...' : 'Approve'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
