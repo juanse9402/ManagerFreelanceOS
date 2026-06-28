@@ -82,7 +82,7 @@ export const ClientOrientation: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar max-h-[95vh] animate-in fade-in zoom-in-95 duration-300">
         
         {step === 1 && (
           <div className="p-8">
