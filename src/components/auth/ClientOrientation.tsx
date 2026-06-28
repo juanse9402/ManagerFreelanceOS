@@ -10,7 +10,16 @@ export const ClientOrientation: React.FC = () => {
   const brandName = clientProfile?.company_name || profileName.split(' ')[0] || 'Brand';
   
   // Steps: 1 = Password, 2 = Features, 3 = Tutorial
-  const [step, setStep] = useState(1);
+  const [step, setStepState] = useState(() => {
+    const saved = sessionStorage.getItem('orientation_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  
+  const setStep = (newStep: number) => {
+    sessionStorage.setItem('orientation_step', newStep.toString());
+    setStepState(newStep);
+  };
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
