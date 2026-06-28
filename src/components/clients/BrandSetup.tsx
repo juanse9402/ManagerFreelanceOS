@@ -83,9 +83,13 @@ export const BrandSetup: React.FC = () => {
         await fetchAvailableClients();
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
+      } else {
+        console.error('Supabase update error:', error);
+        alert(`Error saving to database: ${error.message}. If it says column not found, you need to add a 'brand_settings' column (type JSONB) to your profiles table in Supabase.`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving brand settings:', error);
+      alert(`Unexpected error: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
