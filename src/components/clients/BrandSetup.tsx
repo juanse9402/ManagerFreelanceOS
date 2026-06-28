@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Upload, Check, Video, Camera, Facebook } from 'lucide-react';
+import { Upload, Check, Video, Camera, Globe } from 'lucide-react';
 
 export const BrandSetup: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -156,7 +156,7 @@ export const BrandSetup: React.FC = () => {
               >
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg ${networks.facebook ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                    <Facebook size={20} />
+                    <Globe size={20} />
                   </div>
                   <span className={`font-semibold text-sm ${networks.facebook ? 'text-gray-900' : 'text-gray-500'}`}>Facebook</span>
                 </div>
