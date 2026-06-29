@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, CheckCircle2, Circle, Play, Image as ImageIcon, ImagePlus, FileText } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Play, Image as ImageIcon, ImagePlus, FileText, Clock, DollarSign, ListFilter } from 'lucide-react';
 import { ProjectProgress } from '../dashboard/ProjectProgress';
+import { useTimeTracking, CATEGORIES, CATEGORY_COLORS } from '../../contexts/TimeTrackingContext';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 
 export const CampaignDetail: React.FC = () => {
   const { id, campaignId } = useParams<{ id: string, campaignId: string }>();
   const { availableClients, role, activeClientId } = useAuth();
   const navigate = useNavigate();
+  const { timeEntries } = useTimeTracking();
   
   const resolvedClientId = id || (role === 'client' ? activeClientId : null);
   const client = availableClients.find(c => c.id === resolvedClientId);
 
   const [activeTab, setActiveTab] = useState('Tasks');
+
+  // Filters for campaign time tracking tab
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterBillable, setFilterBillable] = useState<string>('all');
 
   if (!client && role === 'admin') {
     return <div className="p-8 text-center text-gray-500">Client not found</div>;
@@ -33,6 +40,55 @@ export const CampaignDetail: React.FC = () => {
       { id: 4, title: 'Launch Announcement', type: 'Post', status: 'Planning', date: '2026-07-01' },
     ]
   };
+
+  // Filter time entries for this campaign
+  const campaignEntries = timeEntries.filter(e => e.campaignId === campaignId);
+
+  // Apply filters
+  const filteredCampaignEntries = campaignEntries.filter(e => {
+    const matchCat = filterCategory === 'all' || e.category === filterCategory;
+    const matchBill = filterBillable === 'all' || 
+                      (filterBillable === 'billable' && e.billable) || 
+                      (filterBillable === 'non-billable' && !e.billable);
+    return matchCat && matchBill;
+  });
+
+  // Calculate totals
+  const totalCampaignMs = filteredCampaignEntries.reduce((acc, e) => {
+    return acc + (new Date(e.endTime).getTime() - new Date(e.startTime).getTime());
+  }, 0);
+
+  const billableCampaignMs = filteredCampaignEntries
+    .filter(e => e.billable)
+    .reduce((acc, e) => {
+      return acc + (new Date(e.endTime).getTime() - new Date(e.startTime).getTime());
+    }, 0);
+
+  const formatMs = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${mins}m`;
+  };
+
+  // Group by week for trend chart
+  const weekTotals: Record<string, number> = {};
+  campaignEntries.forEach(entry => {
+    const dateObj = new Date(entry.date + 'T00:00:00');
+    // Simple week representation e.g. "Week of Jun 15"
+    const startOfWeek = new Date(dateObj);
+    const day = dateObj.getDay();
+    const diff = dateObj.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    const label = `Wk ${startOfWeek.getMonth() + 1}/${startOfWeek.getDate()}`;
+    
+    const duration = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+    weekTotals[label] = (weekTotals[label] || 0) + duration / (1000 * 60 * 60); // hours
+  });
+
+  const weekChartData = Object.keys(weekTotals).map(label => ({
+    week: label,
+    hours: Number(weekTotals[label].toFixed(2))
+  })).sort((a,b) => a.week.localeCompare(b.week));
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
@@ -137,7 +193,7 @@ export const CampaignDetail: React.FC = () => {
   }
 
   // Admin View
-  const tabs = ['Tasks', 'Content', 'Calendar', 'Progress'];
+  const tabs = ['Tasks', 'Content', 'Calendar', 'Progress', 'Time'];
 
   return (
     <div className="flex flex-col h-full bg-gray-50/30">
@@ -154,7 +210,7 @@ export const CampaignDetail: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Campaign Details</h1>
               <div className="flex items-center space-x-3 text-sm">
-                <span className="text-gray-500">Date Range: TBD</span>
+                <span className="text-gray-500">Campaign ID: {campaignId}</span>
                 <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded border border-blue-100">Planning</span>
               </div>
             </div>
@@ -186,7 +242,8 @@ export const CampaignDetail: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-8 font-sans">
+        
         {activeTab === 'Tasks' && (
           <div className="text-center py-12 animate-in fade-in duration-300">
             <h3 className="text-lg font-bold text-gray-900 mb-2">No tasks yet</h3>
@@ -196,6 +253,140 @@ export const CampaignDetail: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* TIME TRACKING TAB */}
+        {activeTab === 'Time' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            
+            {/* Summary statistics */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center space-x-4">
+                <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Total Campaign Time</span>
+                  <span className="text-xl font-black text-gray-900 block mt-0.5">{formatMs(totalCampaignMs)}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center space-x-4">
+                <div className="p-3 rounded-xl bg-green-50 text-green-600">
+                  <DollarSign size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Billable Time</span>
+                  <span className="text-xl font-black text-gray-900 block mt-0.5">{formatMs(billableCampaignMs)}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center space-x-4">
+                <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+                  <ListFilter size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Log Count</span>
+                  <span className="text-xl font-black text-gray-900 block mt-0.5">{filteredCampaignEntries.length} entries</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Weekly trend chart */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Hours Logged per Week</h3>
+              {weekChartData.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-10">No hours logged to chart.</p>
+              ) : (
+                <div className="h-60">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={weekChartData}>
+                      <XAxis dataKey="week" stroke="#9CA3AF" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} />
+                      <RechartsTooltip formatter={(value) => [`${value} hrs`, 'Duration']} />
+                      <Bar dataKey="hours" fill="var(--brand-primary)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Filters & Log table */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              
+              <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap justify-between items-center gap-3">
+                <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide">Time log records</h3>
+                
+                <div className="flex flex-wrap items-center gap-3">
+                  <select 
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none"
+                  >
+                    <option value="all">All Categories</option>
+                    {CATEGORIES.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+
+                  <select 
+                    value={filterBillable}
+                    onChange={(e) => setFilterBillable(e.target.value)}
+                    className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 font-semibold focus:outline-none"
+                  >
+                    <option value="all">All Billing</option>
+                    <option value="billable">Billable</option>
+                    <option value="non-billable">Non-Billable</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/20 text-gray-400 font-bold uppercase tracking-wider">
+                      <th className="p-3 pl-4">Category</th>
+                      <th className="p-3">Description</th>
+                      <th className="p-3">Date</th>
+                      <th className="p-3">Billing</th>
+                      <th className="p-3 text-right pr-4">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCampaignEntries.map(entry => {
+                      const duration = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+                      return (
+                        <tr key={entry.id} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors last:border-none">
+                          <td className="p-3 pl-4 font-semibold text-gray-800 flex items-center space-x-2">
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[entry.category]?.hex }} />
+                            <span>{entry.category}</span>
+                          </td>
+                          <td className="p-3 text-gray-600 font-medium truncate max-w-[200px]" title={entry.description}>{entry.description}</td>
+                          <td className="p-3 text-gray-500 font-medium">{new Date(entry.date + 'T00:00:00').toLocaleDateString()}</td>
+                          <td className="p-3">
+                            {entry.billable ? (
+                              <span className="text-green-600 font-semibold">Billable</span>
+                            ) : (
+                              <span className="text-gray-400 font-semibold">Internal</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right pr-4 font-mono font-bold text-gray-800">{formatMs(duration)}</td>
+                        </tr>
+                      );
+                    })}
+                    {filteredCampaignEntries.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-gray-400 italic">No time logs match filters.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   );

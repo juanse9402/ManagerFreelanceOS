@@ -1,15 +1,68 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, Building, Bell, Save, Lock, Mail, HelpCircle, CheckCircle } from 'lucide-react';
+import { useTimeTracking } from '../../contexts/TimeTrackingContext';
+import { User, Building, Bell, Save, Lock, Mail, HelpCircle, CheckCircle, Clock } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const { profileName, role } = useAuth();
-  const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'notifications' | 'support'>('account');
+  const { profileName, role, availableClients } = useAuth();
+  const { getClientSettings, saveClientSettings } = useTimeTracking();
+  const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'notifications' | 'support' | 'time-tracking'>('account');
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  // Client Selection for Time Tracking
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  
+  // Settings values
+  const [weeklyTarget, setWeeklyTarget] = useState<string>('');
+  const [hourlyRate, setHourlyRate] = useState<string>('');
+  const [currency, setCurrency] = useState<string>('USD');
+  const [showBillable, setShowBillable] = useState(true);
+  const [showRateInReport, setShowRateInReport] = useState(false);
+  const [autoDelivery, setAutoDelivery] = useState(false);
+  const [deliveryDay, setDeliveryDay] = useState('Monday');
+  const [deliveryTime, setDeliveryTime] = useState('09:00 AM');
+
+  // Pre-fill fields when client or tab changes
+  useEffect(() => {
+    if (availableClients.length > 0 && !selectedClientId) {
+      setSelectedClientId(availableClients[0].id);
+    }
+  }, [availableClients]);
+
+  useEffect(() => {
+    if (!selectedClientId) return;
+    const settings = getClientSettings(selectedClientId);
+    setWeeklyTarget(settings.weeklyHourTarget?.toString() || '');
+    setHourlyRate(settings.defaultRate?.toString() || '');
+    setCurrency(settings.currency || 'USD');
+    setShowBillable(settings.showBillableToClient !== false); // default to true
+    setShowRateInReport(settings.showHourlyRateInReport === true);
+    setAutoDelivery(settings.autoDelivery === true);
+    setDeliveryDay(settings.deliveryDay || 'Monday');
+    setDeliveryTime(settings.deliveryTime || '09:00 AM');
+  }, [selectedClientId, activeTab]);
+
+  const handleSaveClientSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClientId) return;
+
+    saveClientSettings(selectedClientId, {
+      weeklyHourTarget: weeklyTarget ? Number(weeklyTarget) : undefined,
+      defaultRate: hourlyRate ? Number(hourlyRate) : undefined,
+      currency,
+      showBillableToClient: showBillable,
+      showHourlyRateInReport: showRateInReport,
+      autoDelivery,
+      deliveryDay,
+      deliveryTime
+    });
+
+    showToast('Time tracking settings saved! ✓');
   };
 
   // Avatar State
@@ -73,6 +126,18 @@ export const SettingsView: React.FC = () => {
               >
                 <Building size={18} className={activeTab === 'workspace' ? 'text-[var(--brand-primary)]' : 'text-gray-400'} />
                 <span>Workspace</span>
+              </button>
+            )}
+
+            {role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('time-tracking')}
+                className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all text-sm font-semibold ${
+                  activeTab === 'time-tracking' ? 'bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <Clock size={18} className={activeTab === 'time-tracking' ? 'text-[var(--brand-primary)]' : 'text-gray-400'} />
+                <span>Time Tracking</span>
               </button>
             )}
 
@@ -242,6 +307,147 @@ export const SettingsView: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'time-tracking' && role === 'admin' && (
+            <div className="bg-white rounded-[var(--radius-card)] p-6 border border-gray-100 shadow-[var(--shadow-card)] animate-in fade-in slide-in-from-right-2 duration-300">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">Client Time Tracking Configurations</h3>
+              
+              <form onSubmit={handleSaveClientSettings} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Select Client to Configure</label>
+                  <select 
+                    value={selectedClientId} 
+                    onChange={(e) => setSelectedClientId(e.target.value)}
+                    className="w-full sm:w-64 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] cursor-pointer"
+                  >
+                    {availableClients.map(c => (
+                      <option key={c.id} value={c.id}>{c.full_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Weekly Target Hours</label>
+                    <input 
+                      type="number" 
+                      value={weeklyTarget}
+                      onChange={(e) => setWeeklyTarget(e.target.value)}
+                      placeholder="e.g. 10 (Target hours)"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                      min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Hourly Rate ($ / hr)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="number" 
+                        value={hourlyRate}
+                        onChange={(e) => setHourlyRate(e.target.value)}
+                        placeholder="e.g. 50"
+                        className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                        min="0"
+                      />
+                      <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] cursor-pointer"
+                      >
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="COP">COP (Col$)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-900">Show Billable Hours to Client</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Let the client see the split between billable and internal work.</p>
+                    </div>
+                    <div 
+                      onClick={() => setShowBillable(!showBillable)}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${showBillable ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showBillable ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-900">Show Hourly Rate and Value in Reports</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Include the hourly billing rates and total cost inside weekly reports.</p>
+                    </div>
+                    <div 
+                      onClick={() => setShowRateInReport(!showRateInReport)}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${showRateInReport ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showRateInReport ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div>
+                      <h4 className="font-semibold text-sm text-gray-900">Automated Weekly Report Delivery</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Automatically compile and email reports directly to client.</p>
+                    </div>
+                    <div 
+                      onClick={() => setAutoDelivery(!autoDelivery)}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 cursor-pointer ${autoDelivery ? 'bg-[var(--brand-primary)]' : 'bg-gray-200'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${autoDelivery ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                    </div>
+                  </div>
+
+                  {autoDelivery && (
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 animate-in slide-in-from-top duration-200">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">Send every</label>
+                        <select 
+                          value={deliveryDay}
+                          onChange={(e) => setDeliveryDay(e.target.value)}
+                          className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none w-full cursor-pointer"
+                        >
+                          <option value="Monday">Monday</option>
+                          <option value="Tuesday">Tuesday</option>
+                          <option value="Wednesday">Wednesday</option>
+                          <option value="Thursday">Thursday</option>
+                          <option value="Friday">Friday</option>
+                          <option value="Saturday">Saturday</option>
+                          <option value="Sunday">Sunday</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">at time</label>
+                        <input 
+                          type="text" 
+                          value={deliveryTime}
+                          onChange={(e) => setDeliveryTime(e.target.value)}
+                          className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none w-full"
+                          placeholder="e.g. 09:00 AM"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <button 
+                    type="submit"
+                    className="flex items-center space-x-2 bg-[var(--brand-primary)] text-white px-5 py-2.5 rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity text-sm"
+                  >
+                    <Save size={16} />
+                    <span>Save Client settings</span>
+                  </button>
+                </div>
+
+              </form>
             </div>
           )}
 

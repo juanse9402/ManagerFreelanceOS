@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Save, FileText, Type, Paperclip } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTimeTracking } from '../../contexts/TimeTrackingContext';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -20,6 +21,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [visibility, setVisibility] = useState<'admin_only' | 'client_visible'>('admin_only');
   const [attachment, setAttachment] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Task estimate fields
+  const { saveTaskEstimate } = useTimeTracking();
+  const [estimatedTimeValue, setEstimatedTimeValue] = useState('');
+  const [estimatedTimeUnit, setEstimatedTimeUnit] = useState<'hours' | 'minutes'>('hours');
 
   if (!isOpen) return null;
 
@@ -60,17 +66,26 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       attachment_url: finalAttachmentUrl
     };
 
-    const { error } = await supabase.from('tasks').insert([newTask]);
+    // Chain select() to retrieve the generated task ID
+    const { data, error } = await supabase.from('tasks').insert([newTask]).select();
     
     setLoading(false);
     
     if (!error) {
+      if (data && data.length > 0 && estimatedTimeValue) {
+        saveTaskEstimate(data[0].id, {
+          value: Number(estimatedTimeValue),
+          unit: estimatedTimeUnit
+        });
+      }
+      
       setTitle('');
       setCategory('General');
       setDescription('');
       setInternalNotes('');
       setVisibility('admin_only');
       setAttachment(null);
+      setEstimatedTimeValue('');
       onSave();
       onClose();
     } else {
@@ -134,6 +149,32 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all"
                 required
               />
+            </div>
+
+            {/* Estimated Time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Estimated Time (Optional)</label>
+                <input 
+                  type="number"
+                  value={estimatedTimeValue}
+                  onChange={(e) => setEstimatedTimeValue(e.target.value)}
+                  placeholder="e.g. 5"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all animate-in"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Unit</label>
+                <select
+                  value={estimatedTimeUnit}
+                  onChange={(e) => setEstimatedTimeUnit(e.target.value as 'hours' | 'minutes')}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all bg-white cursor-pointer"
+                >
+                  <option value="hours">Hours</option>
+                  <option value="minutes">Minutes</option>
+                </select>
+              </div>
             </div>
 
             {/* Descripción */}

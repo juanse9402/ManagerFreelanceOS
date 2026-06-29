@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings, ChevronDown, Building2, Users, Palette, Megaphone, FolderKanban, Grid } from 'lucide-react';
+import { LayoutDashboard, Calendar, CheckSquare, Image, CheckCircle, Settings, ChevronDown, Building2, Users, Palette, Megaphone, FolderKanban, Grid, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -23,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
     { id: 'brand', icon: Palette, label: 'Brand Setup' },
     { id: 'campaigns', icon: Megaphone, label: 'Campaigns' },
     { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
+    { id: 'time-tracking', icon: Clock, label: 'Time Tracking' },
     { id: 'calendar', icon: Calendar, label: 'Calendar' },
     { id: 'preview', icon: Image, label: 'Preview' },
     { id: 'approvals', icon: CheckCircle, label: 'Approvals' },
@@ -37,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, rol
     { id: 'dashboard', icon: LayoutDashboard, label: 'Home' },
     { id: 'campaigns', icon: FolderKanban, label: 'Campaigns' },
     { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
+    { id: 'hours', icon: Clock, label: 'Hours & Reports' },
     { id: 'calendar', icon: Calendar, label: 'Calendar' },
     { id: 'preview', icon: Grid, label: 'Preview' },
   ];

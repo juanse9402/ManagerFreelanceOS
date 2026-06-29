@@ -18,6 +18,9 @@ import { ClientDetail } from './components/clients/ClientDetail';
 import { BrandSetup } from './components/clients/BrandSetup';
 import { CampaignsList } from './components/campaigns/CampaignsList';
 import { CampaignDetail } from './components/campaigns/CampaignDetail';
+import { TimeTrackingView } from './components/time-tracking/TimeTrackingView';
+import { ClientHoursView } from './components/time-tracking/ClientHoursView';
+import { PublicReportView } from './components/time-tracking/PublicReportView';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -86,6 +89,8 @@ function AuthenticatedApp() {
           <Route path="dashboard" element={role === 'client' ? <ClientDashboard setActiveView={setActiveView} /> : <Dashboard />} />
           <Route path="calendar" element={<CalendarView />} />
           <Route path="tasks" element={<TasksView />} />
+          <Route path="time-tracking" element={<TimeTrackingView />} />
+          <Route path="hours" element={<ClientHoursView />} />
           <Route path="preview" element={<PreviewView />} />
           <Route path="approvals" element={<ApprovalsView />} />
           <Route path="settings" element={<SettingsView />} />
@@ -118,6 +123,7 @@ function App() {
       <Routes>
         <Route path="/register" element={<RegisterView />} />
         <Route path="/login" element={<LoginView />} />
+        <Route path="/report/:reportId" element={<PublicReportView />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -155,6 +161,7 @@ function App() {
       <Routes>
         <Route path="/admin/*" element={<AuthenticatedApp />} />
         <Route path="/client/*" element={<AuthenticatedApp />} />
+        <Route path="/report/:reportId" element={<PublicReportView />} />
         <Route path="*" element={<Navigate to={`/${contextRole}/dashboard`} replace />} />
       </Routes>
     </ThemeProvider>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, CheckSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { StatusColumn } from './StatusColumn';
@@ -6,23 +6,15 @@ import type { TaskType } from './TaskCard';
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { TaskCard } from './TaskCard';
+import { supabase } from '../../lib/supabase';
+import { CreateTaskModal } from './CreateTaskModal';
 
 export const TasksView: React.FC = () => {
   const { activeClientId, role } = useAuth();
   
-  // Mock tasks
-  const initialTasks: TaskType[] = [
-    { id: '1', title: 'Approve content strategy', category: 'Strategy', date: '2026-07-01', status: 'To Do', client_id: 'client_1', visibility: 'client_visible' },
-    { id: '2', title: 'Review Q3 visual assets', category: 'Review', date: '2026-07-02', status: 'In Progress', client_id: 'client_1', visibility: 'client_visible' },
-    { id: '3', title: 'Confirm budget for ads', category: 'Planning', date: '2026-07-05', status: 'To Do', client_id: 'client_1', visibility: 'client_visible' },
-    { id: '4', title: 'Internal Review of Designs', category: 'Production', date: '2026-07-01', status: 'In Progress', client_id: 'client_1', visibility: 'internal' },
-    { id: '5', title: 'Update bio links', category: 'General', date: '2026-06-25', status: 'In Review', client_id: 'client_1', visibility: 'client_visible' },
-    { id: '6', title: 'Draft new campaign copy', category: 'Copywriting', date: '2026-07-10', status: 'Needs Changes', client_id: 'client_1', visibility: 'client_visible' },
-    { id: '7', title: 'Finalize brand guidelines', category: 'Design', date: '2026-06-20', status: 'Completed', client_id: 'client_1', visibility: 'client_visible' }
-  ];
-
-  const [tasks, setTasks] = useState<TaskType[]>(initialTasks);
+  const [tasks, setTasks] = useState<TaskType[]>([]);
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -36,6 +28,30 @@ export const TasksView: React.FC = () => {
     { id: 'Needs Changes', title: 'Needs Changes', color: 'border-t-red-500' },
     { id: 'Completed', title: 'Completed', color: 'border-t-green-500' }
   ];
+
+  // Fetch tasks from Supabase
+  const fetchTasks = async () => {
+    if (!activeClientId) return;
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('client_id', activeClientId);
+
+    if (data && !error) {
+      const mapped = data.map((t: any) => ({
+        ...t,
+        status: t.status === 'todo' ? 'To Do' :
+                t.status === 'in_progress' ? 'In Progress' :
+                t.status === 'review' ? 'In Review' :
+                t.status === 'needs_changes' ? 'Needs Changes' : 'Completed'
+      }));
+      setTasks(mapped);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, [activeClientId]);
 
   // Filter tasks for client
   const visibleTasks = role === 'client' ? tasks.filter(t => t.visibility === 'client_visible') : tasks;
@@ -55,7 +71,7 @@ export const TasksView: React.FC = () => {
     if (task) setActiveTask(task);
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = async (event: any) => {
     const { active, over } = event;
     setActiveTask(null);
     
@@ -69,21 +85,26 @@ export const TasksView: React.FC = () => {
     
     if (!overColumnId) return;
 
-    setTasks(prev => {
-      const activeTaskIndex = prev.findIndex(t => t.id === activeId);
-      if (activeTaskIndex === -1) return prev;
-      
-      const newTasks = [...prev];
-      if (newTasks[activeTaskIndex].status !== overColumnId) {
-        newTasks[activeTaskIndex] = { ...newTasks[activeTaskIndex], status: overColumnId };
-      }
-      return newTasks;
-    });
+    // Map UI column status back to database status values
+    const dbStatus = overColumnId === 'To Do' ? 'todo' :
+                     overColumnId === 'In Progress' ? 'in_progress' :
+                     overColumnId === 'In Review' ? 'review' :
+                     overColumnId === 'Needs Changes' ? 'needs_changes' : 'done';
+
+    // Optimistically update locally
+    setTasks(prev => prev.map(t => t.id === activeId ? { ...t, status: overColumnId } : t));
+
+    // Update in database
+    await supabase
+      .from('tasks')
+      .update({ status: dbStatus })
+      .eq('id', activeId);
+
+    fetchTasks();
   };
 
   const handleCreateTask = () => {
-    // Placeholder for creating task
-    alert("Create task functionality goes here.");
+    setIsCreateModalOpen(true);
   };
 
   return (
@@ -146,6 +167,12 @@ export const TasksView: React.FC = () => {
           </DndContext>
         )}
       </div>
+
+      <CreateTaskModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onSave={fetchTasks} 
+      />
     </div>
   );
 };
