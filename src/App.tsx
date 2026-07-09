@@ -131,7 +131,9 @@ function App() {
     );
   }
 
-  if (status === 'pending') {
+  const isPublicRoute = window.location.pathname.includes('/shared-approval/') || window.location.pathname.includes('/report/');
+
+  if (status === 'pending' && !isPublicRoute) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center py-12 sm:px-6 lg:px-8 font-sans">
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-gray-100">
