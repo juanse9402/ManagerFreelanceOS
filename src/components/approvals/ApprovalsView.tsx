@@ -28,8 +28,8 @@ export const ApprovalsView: React.FC = () => {
     }
   };
 
-  const handleCopyShareLink = (id: string) => {
-    const url = `${window.location.origin}/shared-approval/${id}`;
+  const handleCopyShareLink = (clientId: string) => {
+    const url = `${window.location.origin}/shared-portal/${clientId}`;
     navigator.clipboard.writeText(url);
     alert('Approval link copied to clipboard!');
   };
@@ -157,7 +157,7 @@ export const ApprovalsView: React.FC = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <button 
-                          onClick={() => handleCopyShareLink(item.id)}
+                          onClick={() => handleCopyShareLink(item.client_id)}
                           className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                           title="Copy Approval Quick Link"
                         >

@@ -165,7 +165,8 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
   };
 
   const handleCopyShareLink = () => {
-    const url = `${window.location.origin}/shared-approval/${item.id}`;
+    if (!item?.client_id) return;
+    const url = `${window.location.origin}/shared-portal/${item.client_id}`;
     navigator.clipboard.writeText(url);
     alert('Approval link copied to clipboard!');
   };

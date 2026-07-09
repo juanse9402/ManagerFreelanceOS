@@ -7,7 +7,7 @@ import { TasksView } from './components/tasks/TasksView';
 import { PreviewView } from './components/preview/PreviewView';
 import { SettingsView } from './components/settings/SettingsView';
 import { ApprovalsView } from './components/approvals/ApprovalsView';
-import { SharedApprovalView } from './components/approvals/SharedApprovalView';
+import { SharedPortalView } from './components/approvals/SharedPortalView';
 import { useAuth } from './contexts/AuthContext';
 import { LoginView } from './components/auth/LoginView';
 import { RegisterView } from './components/auth/RegisterView';
@@ -125,13 +125,13 @@ function App() {
         <Route path="/register" element={<RegisterView />} />
         <Route path="/login" element={<LoginView />} />
         <Route path="/report/:reportId" element={<PublicReportView />} />
-        <Route path="/shared-approval/:postId" element={<SharedApprovalView />} />
+        <Route path="/shared-portal/:clientId" element={<SharedPortalView />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
 
-  const isPublicRoute = window.location.pathname.includes('/shared-approval/') || window.location.pathname.includes('/report/');
+  const isPublicRoute = window.location.pathname.includes('/shared-portal/') || window.location.pathname.includes('/report/');
 
   if (status === 'pending' && !isPublicRoute) {
     return (
@@ -166,7 +166,7 @@ function App() {
         <Route path="/admin/*" element={<AuthenticatedApp />} />
         <Route path="/client/*" element={<AuthenticatedApp />} />
         <Route path="/report/:reportId" element={<PublicReportView />} />
-        <Route path="/shared-approval/:postId" element={<SharedApprovalView />} />
+        <Route path="/shared-portal/:clientId" element={<SharedPortalView />} />
         <Route path="*" element={<Navigate to={`/${contextRole}/dashboard`} replace />} />
       </Routes>
     </ThemeProvider>
