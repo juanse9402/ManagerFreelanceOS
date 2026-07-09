@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
   Camera, 
   Smartphone, 
   Monitor, 
-  MessageSquare, 
   CheckCircle, 
   Loader2, 
   Send,
@@ -27,7 +26,6 @@ import { CATEGORY_COLORS } from '../../contexts/TimeTrackingContext';
 
 export const SharedPortalView: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
-  const navigate = useNavigate();
   const { session, user } = useAuth();
 
   // Active Tab: 'board' | 'calendar' | 'time'
@@ -415,7 +413,6 @@ export const SharedPortalView: React.FC = () => {
 
   // Modal Comments helper
   const unmountedPins = comments.filter(c => c.pin_coordinates && !c.is_resolved);
-  const resolvedComments = comments.filter(c => c.is_resolved);
   const openComments = comments.filter(c => !c.is_resolved);
 
   return (
@@ -909,6 +906,7 @@ export const SharedPortalView: React.FC = () => {
                               </button>
                             </div>
                             <p className="text-slate-400 text-[11px] mt-1">{parsedText}</p>
+                            <p className="text-[10px] text-slate-500 mt-1.5">{dateStr}</p>
                           </div>
                         </div>
                       );
