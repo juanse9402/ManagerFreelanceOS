@@ -6,8 +6,6 @@ import {
   Monitor, 
   MessageSquare, 
   CheckCircle, 
-  Mail, 
-  Lock, 
   Loader2, 
   Send,
   AlertCircle,
@@ -60,7 +58,7 @@ export const SharedApprovalView: React.FC = () => {
           const password = 'ViewerPassword123!';
           
           // Try to sign in
-          let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
           
           if (error && (error.message.includes('Invalid login credentials') || error.message.includes('User not found'))) {
             // Register guest account
