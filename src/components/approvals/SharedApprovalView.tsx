@@ -21,17 +21,6 @@ export const SharedApprovalView: React.FC = () => {
   const navigate = useNavigate();
   const { session, user } = useAuth();
 
-  // Authentication State
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  
-  // Progress Brand Reveal (just like LoginView)
-  const [brandColor, setBrandColor] = useState('#6366f1'); // Indigio default
-  const [brandLogo, setBrandLogo] = useState<string | null>(null);
-  const [isClientMode, setIsClientMode] = useState(false);
-
   // Content Data State
   const [post, setPost] = useState<any | null>(null);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -42,6 +31,11 @@ export const SharedApprovalView: React.FC = () => {
   const [authors, setAuthors] = useState<Record<string, string>>({});
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  
+  // Guest Name State
+  const [guestName, setGuestName] = useState(() => {
+    return localStorage.getItem('guest_viewer_name') || '';
+  });
 
   // UI States
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
@@ -49,53 +43,55 @@ export const SharedApprovalView: React.FC = () => {
   const [activePinCoordinates, setActivePinCoordinates] = useState<{x: number, y: number} | null>(null);
   const [actionSuccess, setActionSuccess] = useState<'approved' | 'changes_requested' | null>(null);
 
-  // Check email for client branding on blur
-  const handleEmailBlur = async () => {
-    if (!email || !email.includes('@')) return;
-    try {
-      const { data, error } = await supabase.rpc('get_client_brand_by_email', { client_email: email });
-      if (data && !error && data.primary_color) {
-        setIsClientMode(true);
-        setBrandColor(data.primary_color);
-        if (data.logo_url) setBrandLogo(data.logo_url);
-      } else {
-        setIsClientMode(false);
-        setBrandColor('#6366f1');
-        setBrandLogo(null);
+  // Save guest name to localStorage when changed
+  const handleGuestNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setGuestName(val);
+    localStorage.setItem('guest_viewer_name', val);
+  };
+
+  // Silent Auto-Login for clients/guests using the quick link
+  useEffect(() => {
+    const runSilentAuth = async () => {
+      if (!session && postId) {
+        setLoadingPost(true);
+        try {
+          const email = 'client_viewer@kameleoia.com';
+          const password = 'ViewerPassword123!';
+          
+          // Try to sign in
+          let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          
+          if (error && (error.message.includes('Invalid login credentials') || error.message.includes('User not found'))) {
+            // Register guest account
+            const { error: signUpError } = await supabase.auth.signUp({ email, password });
+            if (!signUpError) {
+              const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+              if (signInErr) throw signInErr;
+            } else {
+              throw signUpError;
+            }
+          } else if (error) {
+            throw error;
+          }
+          
+          // Reload page to apply session to useAuth context
+          window.location.reload();
+        } catch (e: any) {
+          console.error('Silent auth failed:', e);
+          setPostError('Error initializing guest session: ' + e.message);
+          setLoadingPost(false);
+        }
       }
-    } catch (e) {
-      console.error('Error fetching brand details:', e);
-    }
-  };
-
-  // Handle Login
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      
-      // The auth listener in App.tsx or useAuth will trigger a re-render.
-      // We will reload the page or trigger local load.
-      window.location.reload();
-    } catch (err: any) {
-      setAuthError(err.message || 'Invalid credentials');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+    };
+    runSilentAuth();
+  }, [session, postId]);
 
   // Fetch Post and Comments once logged in
   useEffect(() => {
     if (session && postId) {
       loadPostAndComments();
-    } else {
+    } else if (!postId) {
       setLoadingPost(false);
     }
   }, [session, postId]);
@@ -186,9 +182,18 @@ export const SharedApprovalView: React.FC = () => {
   const handleAddComment = async () => {
     if (!commentText.trim() || !post) return;
     
+    // Determine if we are logged in as the generic guest account
+    const isGenericGuest = user?.email === 'client_viewer@kameleoia.com';
+    let finalCommentText = commentText;
+    
+    if (isGenericGuest) {
+      const nameTag = guestName.trim() ? guestName.trim() : 'Guest Client';
+      finalCommentText = `[Guest: ${nameTag}] ${commentText}`;
+    }
+
     const newComment = {
       content_id: post.id,
-      text: commentText,
+      text: finalCommentText,
       user_id: user?.id || null,
       pin_coordinates: activePinCoordinates ? activePinCoordinates : null,
       is_resolved: false
@@ -251,6 +256,28 @@ export const SharedApprovalView: React.FC = () => {
     window.location.reload();
   };
 
+  // Helper to parse guest name tag out of comments
+  const parseCommentDisplay = (comment: any) => {
+    const rawText = comment.text || '';
+    const match = rawText.match(/^\[Guest:\s*(.*?)\]\s*(.*)/s);
+    
+    if (match) {
+      return {
+        authorName: `${match[1]} (Client)`,
+        commentText: match[2]
+      };
+    }
+    
+    const authorName = comment.user_id 
+      ? (authors[comment.user_id] || (comment.user_id === user?.id ? 'You' : 'Agency Member')) 
+      : 'Client (Guest)';
+      
+    return {
+      authorName,
+      commentText: rawText
+    };
+  };
+
   const unmountedPins = comments.filter(c => c.pin_coordinates && !c.is_resolved);
   const resolvedComments = comments.filter(c => c.is_resolved);
   const openComments = comments.filter(c => !c.is_resolved);
@@ -258,124 +285,43 @@ export const SharedApprovalView: React.FC = () => {
   // Loader state
   if (loadingPost) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center font-sans">
-        <Loader2 className="w-10 h-10 text-[var(--brand-primary)] animate-spin mb-4" />
-        <p className="text-sm font-semibold text-gray-500">Cargando detalles de aprobación...</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center font-sans">
+        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+        <p className="text-sm font-semibold text-gray-400">Loading approval details...</p>
       </div>
     );
   }
 
-  // 1. NOT LOGGED IN VIEW - Sleek integrated login form
-  if (!session) {
-    return (
-      <div 
-        className="min-h-screen flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans transition-all duration-500 ease-in-out bg-slate-900 text-white"
-        style={{
-          background: isClientMode 
-            ? `radial-gradient(circle at top left, ${brandColor}20, #0f172a 60%)` 
-            : 'radial-gradient(circle at top left, #1e1b4b, #0f172a 60%)'
-        }}
-      >
-        <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-          <div className="flex justify-center mb-6">
-            {isClientMode && brandLogo ? (
-              <img src={brandLogo} alt="Client Logo" className="w-20 h-20 object-contain rounded-2xl shadow-xl border border-gray-800" />
-            ) : (
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg">
-                <CheckCircle className="w-8 h-8 text-indigo-400" />
-              </div>
-            )}
-          </div>
-          <h2 className="text-3xl font-extrabold tracking-tight">Content Review Hub</h2>
-          <p className="mt-2 text-sm text-gray-400">
-            Sign in below with your client credentials to approve & comment.
-          </p>
-        </div>
-
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-slate-800/80 backdrop-blur-xl py-8 px-6 shadow-2xl rounded-3xl border border-slate-700/50">
-            {authError && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 rounded-2xl text-xs mb-6 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
-                {authError}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                  <input 
-                    type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    onBlur={handleEmailBlur}
-                    placeholder="you@company.com"
-                    className="w-full bg-slate-950/50 border border-slate-700 text-white rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all placeholder-slate-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5" />
-                  <input 
-                    type="password"
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-950/50 border border-slate-700 text-white rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all placeholder-slate-600"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={authLoading}
-                className="w-full py-4 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 text-white text-sm font-semibold rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] flex justify-center items-center"
-                style={{ backgroundColor: isClientMode ? brandColor : undefined }}
-              >
-                {authLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Enter Review Session'}
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. ERROR VIEW
+  // ERROR VIEW
   if (postError || !post) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-6 text-center font-sans">
         <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 text-red-400 rounded-full flex items-center justify-center mb-6">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Acceso Denegado / Error</h2>
-        <p className="text-slate-400 max-w-sm mb-6">{postError || 'No pudimos encontrar la publicación solicitada.'}</p>
+        <h2 className="text-xl font-bold text-white mb-2">Access Denied / Error</h2>
+        <p className="text-slate-400 max-w-sm mb-6">{postError || 'Could not find the requested publication.'}</p>
         <div className="flex gap-4">
           <button 
             onClick={() => navigate('/')} 
             className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl transition-all"
           >
-            Ir al Dashboard
+            Go to Dashboard
           </button>
           <button 
             onClick={handleSignOut} 
             className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition-all"
           >
-            Cerrar Sesión
+            Sign Out
           </button>
         </div>
       </div>
     );
   }
 
-  // 3. MAIN APPROVAL PORTAL VIEW (Logged In)
+  // MAIN APPROVAL PORTAL VIEW (Logged In / Silently Authenticated)
+  const isGenericGuest = user?.email === 'client_viewer@kameleoia.com';
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
       {/* Dynamic Success overlay */}
@@ -385,12 +331,12 @@ export const SharedApprovalView: React.FC = () => {
             <CheckCircle size={48} className="text-green-400 animate-bounce" />
           </div>
           <h2 className="text-3xl font-extrabold text-white mb-2 text-center">
-            {actionSuccess === 'approved' ? '¡Publicación Aprobada!' : '¡Comentarios Enviados!'}
+            {actionSuccess === 'approved' ? 'Post Approved!' : 'Comments Submitted!'}
           </h2>
           <p className="text-slate-400 text-center max-w-sm">
             {actionSuccess === 'approved' 
-              ? 'El contenido está marcado como listo para publicar. La agencia ha sido notificada.' 
-              : 'Se han solicitado cambios. El equipo revisará tus anotaciones e indicaciones.'}
+              ? 'The content is marked as ready to publish. The team has been notified.' 
+              : 'Changes requested. The agency team will review your notes and coordinate changes.'}
           </p>
         </div>
       )}
@@ -416,18 +362,22 @@ export const SharedApprovalView: React.FC = () => {
                 {post.status}
               </span>
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">Portal de Aprobación para Clientes</p>
+            <p className="text-xs text-slate-400 mt-0.5">Client Approval Portal</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3 shrink-0">
-          <span className="text-xs text-slate-400 hidden md:inline">Conectado como <strong className="text-slate-200">{user?.email}</strong></span>
-          <button 
-            onClick={handleSignOut} 
-            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-semibold transition-all"
-          >
-            Cerrar Sesión
-          </button>
+          <span className="text-xs text-slate-400">
+            Session: <strong className="text-slate-200">{isGenericGuest ? 'Quick Access (Guest)' : user?.email}</strong>
+          </span>
+          {!isGenericGuest && (
+            <button 
+              onClick={handleSignOut} 
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-semibold transition-all"
+            >
+              Sign Out
+            </button>
+          )}
         </div>
       </header>
 
@@ -436,7 +386,7 @@ export const SharedApprovalView: React.FC = () => {
         {/* Left Column: Media Preview */}
         <section className="lg:col-span-7 bg-slate-950 p-6 flex flex-col items-center justify-center border-r border-slate-900/50 min-h-[500px]">
           <div className="w-full max-w-xl flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-300">Previsualización de Publicación</h3>
+            <h3 className="text-sm font-bold text-slate-300">Post Preview Simulator</h3>
             <div className="flex items-center space-x-2">
               <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-0.5">
                 <button 
@@ -465,7 +415,7 @@ export const SharedApprovalView: React.FC = () => {
                     : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                {isAddingPin ? 'Cancelar Pin' : 'Añadir Pin de Cambios'}
+                {isAddingPin ? 'Cancel Pin' : 'Add Change Pin'}
               </button>
             </div>
           </div>
@@ -484,7 +434,7 @@ export const SharedApprovalView: React.FC = () => {
               ) : (
                 <div className="text-slate-500 flex flex-col items-center justify-center h-full">
                   <Camera size={48} className="mb-2 opacity-30" />
-                  <span className="text-sm font-semibold">Sin imagen</span>
+                  <span className="text-sm font-semibold">No media preview available</span>
                 </div>
               )}
 
@@ -518,7 +468,7 @@ export const SharedApprovalView: React.FC = () => {
           <div className="p-6 border-b border-slate-900/50">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Copy / Caption</h3>
             <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto custom-scrollbar">
-              {post.description || 'Sin descripción o texto asignado.'}
+              {post.description || 'No description copy provided.'}
             </div>
             {post.hashtags && (
               <div className="mt-2 text-xs text-indigo-400 font-medium">
@@ -532,27 +482,27 @@ export const SharedApprovalView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <h3 className="text-sm font-bold text-slate-300 flex items-center">
                 <MessageSquare size={16} className="mr-2 text-slate-500" />
-                Sugerencias y Cambios
+                Suggestions & Changes
               </h3>
               <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">
-                {openComments.length} Abiertos
+                {openComments.length} Open
               </span>
             </div>
 
             {loadingComments ? (
-              <div className="text-center py-8 text-xs text-slate-500">Cargando comentarios...</div>
+              <div className="text-center py-8 text-xs text-slate-500">Loading comments...</div>
             ) : comments.length === 0 ? (
               <div className="text-center py-12 text-slate-500 flex flex-col items-center">
                 <HelpCircle size={32} className="opacity-20 mb-2" />
-                <p className="text-xs">No hay sugerencias registradas.</p>
-                <p className="text-[10px] text-slate-600 mt-1">Usa la caja de abajo o añade un pin para sugerir cambios.</p>
+                <p className="text-xs">No feedback or suggestions submitted yet.</p>
+                <p className="text-[10px] text-slate-600 mt-1">Use the field below or click "Add Change Pin" to annotate the image.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {openComments.map((comment) => {
-                  const authorName = comment.user_id ? (authors[comment.user_id] || 'Miembro de la Agencia') : 'Tú (Cliente)';
+                  const { authorName, commentText: parsedText } = parseCommentDisplay(comment);
                   const initials = authorName[0].toUpperCase();
-                  const dateStr = comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Hace un momento';
+                  const dateStr = comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Just now';
 
                   return (
                     <div key={comment.id} className="flex space-x-3 group relative">
@@ -571,10 +521,10 @@ export const SharedApprovalView: React.FC = () => {
                             onClick={() => toggleResolve(comment.id, comment.is_resolved)}
                             className="text-[10px] text-slate-500 hover:text-green-400 font-semibold flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            Resolver
+                            Resolve
                           </button>
                         </div>
-                        <p className="text-slate-400 text-xs mt-1">{comment.text}</p>
+                        <p className="text-slate-400 text-xs mt-1">{parsedText}</p>
                         <p className="text-[10px] text-slate-600 mt-2">{dateStr}</p>
                       </div>
                     </div>
@@ -583,10 +533,10 @@ export const SharedApprovalView: React.FC = () => {
 
                 {resolvedComments.length > 0 && (
                   <div className="mt-6 pt-4 border-t border-slate-850">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resueltos ({resolvedComments.length})</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resolved ({resolvedComments.length})</p>
                     <div className="space-y-3 opacity-55">
                       {resolvedComments.map(comment => {
-                        const authorName = comment.user_id ? (authors[comment.user_id] || 'Miembro de la Agencia') : 'Tú (Cliente)';
+                        const { authorName, commentText: parsedText } = parseCommentDisplay(comment);
                         const initials = authorName[0].toUpperCase();
 
                         return (
@@ -601,10 +551,10 @@ export const SharedApprovalView: React.FC = () => {
                                   onClick={() => toggleResolve(comment.id, comment.is_resolved)} 
                                   className="text-[10px] text-indigo-400 hover:underline font-semibold"
                                 >
-                                  Reabrir
+                                  Reopen
                                 </button>
                               </div>
-                              <p className="text-slate-500 line-through text-[11px] mt-1">{comment.text}</p>
+                              <p className="text-slate-500 line-through text-[11px] mt-1">{parsedText}</p>
                             </div>
                           </div>
                         );
@@ -619,22 +569,37 @@ export const SharedApprovalView: React.FC = () => {
           {/* New comment input area */}
           <div className="p-4 bg-slate-900/50 border-t border-slate-900/50 flex flex-col gap-2 relative">
             {activePinCoordinates && (
-              <div className="text-xs text-amber-300 font-semibold flex items-center bg-amber-950/20 border border-amber-900/30 p-2.5 rounded-xl">
-                <span className="bg-amber-500 text-slate-950 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black mr-2">*</span>
-                Pin posicionado en la imagen. Escribe tu sugerencia de cambio abajo.
+              <div className="text-xs text-amber-300 font-semibold flex items-center bg-amber-955/20 border border-amber-900/30 p-2.5 rounded-xl">
+                <span className="bg-amber-500 text-slate-955 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black mr-2">*</span>
+                Pin placed on image. Describe the requested change in the comment field.
                 <button 
                   onClick={() => { setActivePinCoordinates(null); setIsAddingPin(false); }} 
                   className="ml-auto text-amber-500 hover:underline font-bold"
                 >
-                  Cancelar
+                  Cancel
                 </button>
               </div>
             )}
+            
+            {/* Guest Name input field */}
+            {isGenericGuest && (
+              <div className="mb-2">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Your Name (Required for comments)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. John Doe"
+                  value={guestName}
+                  onChange={handleGuestNameChange}
+                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 placeholder-slate-700"
+                />
+              </div>
+            )}
+
             <div className="flex space-x-2">
               <input 
                 id="shared-comment-input"
                 type="text" 
-                placeholder={activePinCoordinates ? "Describir cambio para este pin..." : "Agregar sugerencia o comentario..."}
+                placeholder={activePinCoordinates ? "Describe change for this pin..." : "Type suggestion or feedback..."}
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddComment()}
@@ -655,13 +620,13 @@ export const SharedApprovalView: React.FC = () => {
               onClick={() => handleUpdateStatus('Changes Requested')} 
               className="flex-1 py-3 border border-amber-500 hover:bg-amber-500/10 text-amber-400 font-extrabold rounded-2xl text-xs transition-all active:scale-[0.98]"
             >
-              Solicitar Cambios
+              Request Changes
             </button>
             <button 
               onClick={() => handleUpdateStatus('Approved')} 
               className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs transition-all active:scale-[0.98] shadow-lg shadow-indigo-600/10"
             >
-              Aprobar Contenido
+              Approve Content
             </button>
           </div>
         </section>

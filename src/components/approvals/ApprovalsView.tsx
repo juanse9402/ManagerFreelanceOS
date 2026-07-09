@@ -31,7 +31,7 @@ export const ApprovalsView: React.FC = () => {
   const handleCopyShareLink = (id: string) => {
     const url = `${window.location.origin}/shared-approval/${id}`;
     navigator.clipboard.writeText(url);
-    alert('¡Enlace de aprobación copiado al portapapeles!');
+    alert('Approval link copied to clipboard!');
   };
 
   return (
