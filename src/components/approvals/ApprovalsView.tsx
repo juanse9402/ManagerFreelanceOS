@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Search, Filter, CheckCircle, XCircle, Clock, LayoutGrid, MessageSquare } from 'lucide-react';
+import { Camera, Search, Filter, CheckCircle, XCircle, Clock, LayoutGrid, MessageSquare, Share2 } from 'lucide-react';
 import { ContentDrawer } from '../calendar/ContentDrawer';
 import { FeedbackInbox } from './FeedbackInbox';
 import { supabase } from '../../lib/supabase';
@@ -26,6 +26,12 @@ export const ApprovalsView: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyShareLink = (id: string) => {
+    const url = `${window.location.origin}/shared-approval/${id}`;
+    navigator.clipboard.writeText(url);
+    alert('¡Enlace de aprobación copiado al portapapeles!');
   };
 
   return (
@@ -149,12 +155,21 @@ export const ApprovalsView: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => setSelectedItem(item)}
-                        className="text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      >
-                        Review
-                      </button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button 
+                          onClick={() => handleCopyShareLink(item.id)}
+                          className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                          title="Copy Approval Quick Link"
+                        >
+                          <Share2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => setSelectedItem(item)}
+                          className="text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        >
+                          Review
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

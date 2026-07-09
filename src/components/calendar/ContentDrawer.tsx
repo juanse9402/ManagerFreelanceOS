@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Camera, MessageSquare, Clock, CheckCircle, Trash2, History, Smartphone, Monitor } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Camera, MessageSquare, Clock, CheckCircle, Trash2, History, Smartphone, Monitor, Share2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { VersionHistoryPanel } from '../preview/VersionHistoryPanel';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,22 +12,59 @@ interface ContentDrawerProps {
 }
 
 export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, item, onUpdate }) => {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isAddingPin, setIsAddingPin] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile');
   const [activePinCoordinates, setActivePinCoordinates] = useState<{x: number, y: number} | null>(null);
-  const [localComments, setLocalComments] = useState([{
-    id: 1,
-    author: 'Carlos (Client)',
-    text: 'Looks great! Can we change the second hashtag to #MarketingAgency?',
-    time: 'Today, 09:30 AM',
-    initials: 'C',
-    isResolved: false,
-    pinCoordinates: null as {x: number, y: number} | null
-  }]);
+  const [comments, setComments] = useState<any[]>([]);
+  const [authors, setAuthors] = useState<Record<string, string>>({});
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && item?.id) {
+      fetchComments();
+    }
+  }, [isOpen, item?.id]);
+
+  const fetchComments = async () => {
+    if (!item?.id) return;
+    setLoadingComments(true);
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('content_id', item.id)
+        .order('created_at', { ascending: true });
+        
+      if (error) throw error;
+      
+      const loadedComments = data || [];
+      setComments(loadedComments);
+      
+      const userIds = Array.from(new Set(loadedComments.map((c: any) => c.user_id).filter(Boolean)));
+      if (userIds.length > 0) {
+        const { data: profiles, error: pErr } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+          
+        if (profiles && !pErr) {
+          const mapping = profiles.reduce((acc: Record<string, string>, p: any) => {
+            acc[p.id] = p.full_name;
+            return acc;
+          }, {});
+          setAuthors(mapping);
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching comments:', e);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
 
   if (!isOpen || !item) return null;
 
@@ -62,20 +99,42 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
     }
   };
 
-  const handleAddComment = () => {
-    if (!commentText.trim()) return;
-    setLocalComments([...localComments, {
-      id: Date.now(),
-      author: 'You',
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !item?.id) return;
+    
+    const newComment = {
+      content_id: item.id,
       text: commentText,
-      time: 'Just now',
-      initials: 'Y',
-      isResolved: false,
-      pinCoordinates: activePinCoordinates
-    }]);
-    setCommentText('');
-    setActivePinCoordinates(null);
-    setIsAddingPin(false);
+      user_id: user?.id || null,
+      pin_coordinates: activePinCoordinates ? activePinCoordinates : null,
+      is_resolved: false
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([newComment])
+        .select('*')
+        .single();
+        
+      if (error) throw error;
+      
+      setComments(prev => [...prev, data]);
+      setCommentText('');
+      setActivePinCoordinates(null);
+      setIsAddingPin(false);
+      
+      // Update authors map with user's profileName if logged in
+      if (user?.id && !authors[user.id]) {
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        if (profile) {
+          setAuthors(prev => ({ ...prev, [user.id]: profile.full_name }));
+        }
+      }
+    } catch (e) {
+      console.error('Error adding comment:', e);
+      alert('Error adding comment');
+    }
   };
 
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -87,15 +146,33 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
     document.getElementById('comment-input')?.focus();
   };
 
-  const toggleResolve = (id: number) => {
-    setLocalComments(localComments.map(c => 
-      c.id === id ? { ...c, isResolved: !c.isResolved } : c
-    ));
+  const toggleResolve = async (commentId: string, currentResolved: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .update({ is_resolved: !currentResolved })
+        .eq('id', commentId);
+        
+      if (error) throw error;
+      
+      setComments(prev => prev.map(c => 
+        c.id === commentId ? { ...c, is_resolved: !currentResolved } : c
+      ));
+    } catch (e) {
+      console.error('Error toggling resolve state:', e);
+      alert('Error updating comment state');
+    }
   };
 
-  const unmountedPins = localComments.filter(c => c.pinCoordinates && !c.isResolved);
-  const resolvedComments = localComments.filter(c => c.isResolved);
-  const openComments = localComments.filter(c => !c.isResolved);
+  const handleCopyShareLink = () => {
+    const url = `${window.location.origin}/shared-approval/${item.id}`;
+    navigator.clipboard.writeText(url);
+    alert('¡Enlace de aprobación copiado al portapapeles!');
+  };
+
+  const unmountedPins = comments.filter(c => c.pin_coordinates && !c.is_resolved);
+  const resolvedComments = comments.filter(c => c.is_resolved);
+  const openComments = comments.filter(c => !c.is_resolved);
 
   if (showSuccess) {
     return (
@@ -133,6 +210,13 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
             Content Review
           </h2>
           <div className="flex items-center space-x-2">
+            <button 
+              onClick={handleCopyShareLink}
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+              title="Copy Approval Quick Link"
+            >
+              <Share2 size={18} />
+            </button>
             {role === 'admin' && (
               <button onClick={handleDelete} className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors" title="Delete">
                 <Trash2 size={18} />
@@ -252,57 +336,75 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{openComments.length} Open</span>
             </div>
             
-            <div className="space-y-4">
-              {openComments.map((comment, idx) => (
-                <div key={comment.id} className="flex space-x-3 group relative">
-                  <div className={`w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 ${comment.author === 'You' ? 'bg-gray-800' : 'bg-[var(--brand-primary)]'}`}>
-                    {comment.initials}
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg rounded-tl-none border border-gray-100 text-sm flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="font-semibold text-gray-800 flex items-center gap-2">
-                        {comment.author}
-                        {comment.pinCoordinates && (
-                          <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Pin #{idx + 1}</span>
-                        )}
-                      </p>
-                      <button 
-                        onClick={() => toggleResolve(comment.id)}
-                        className="text-[10px] text-gray-400 hover:text-green-600 font-medium flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <CheckCircle size={12} className="mr-1" /> Resolve
-                      </button>
-                    </div>
-                    <p className="text-gray-600">{comment.text}</p>
-                    <p className="text-xs text-gray-400 mt-2">{comment.time}</p>
-                  </div>
-                </div>
-              ))}
-
-              {resolvedComments.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Resolved ({resolvedComments.length})</p>
-                  <div className="space-y-3 opacity-60">
-                    {resolvedComments.map(comment => (
-                      <div key={comment.id} className="flex space-x-3">
-                        <div className="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                          {comment.initials}
-                        </div>
-                        <div className="bg-gray-50 p-2.5 rounded-lg rounded-tl-none border border-gray-100 text-xs flex-1">
-                          <div className="flex justify-between items-start mb-1">
-                            <p className="font-semibold text-gray-600">{comment.author}</p>
-                            <button onClick={() => toggleResolve(comment.id)} className="text-[10px] text-gray-400 hover:text-gray-600 font-medium">
-                              Reopen
-                            </button>
-                          </div>
-                          <p className="text-gray-500 line-through">{comment.text}</p>
-                        </div>
+            {loadingComments ? (
+              <div className="text-center py-4 text-xs text-gray-400">Loading comments...</div>
+            ) : (
+              <div className="space-y-4">
+                {openComments.map((comment, idx) => {
+                  const authorName = comment.user_id ? (authors[comment.user_id] || 'Agency Member') : 'Client (Quick Link)';
+                  const initials = authorName[0].toUpperCase();
+                  const dateStr = comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Just now';
+                  
+                  return (
+                    <div key={comment.id} className="flex space-x-3 group relative">
+                      <div className={`w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 ${comment.user_id ? 'bg-gray-800' : 'bg-[var(--brand-primary)]'}`}>
+                        {initials}
                       </div>
-                    ))}
+                      <div className="bg-gray-50 p-3 rounded-lg rounded-tl-none border border-gray-100 text-sm flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-semibold text-gray-800 flex items-center gap-2">
+                            {authorName}
+                            {comment.pin_coordinates && (
+                              <span className="bg-amber-100 text-amber-700 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Pin</span>
+                            )}
+                          </p>
+                          <button 
+                            onClick={() => toggleResolve(comment.id, comment.is_resolved)}
+                            className="text-[10px] text-gray-400 hover:text-green-600 font-medium flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <CheckCircle size={12} className="mr-1" /> Resolve
+                          </button>
+                        </div>
+                        <p className="text-gray-600">{comment.text}</p>
+                        <p className="text-xs text-gray-400 mt-2">{dateStr}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {resolvedComments.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Resolved ({resolvedComments.length})</p>
+                    <div className="space-y-3 opacity-60">
+                      {resolvedComments.map(comment => {
+                        const authorName = comment.user_id ? (authors[comment.user_id] || 'Agency Member') : 'Client (Quick Link)';
+                        const initials = authorName[0].toUpperCase();
+                        
+                        return (
+                          <div key={comment.id} className="flex space-x-3">
+                            <div className="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                              {initials}
+                            </div>
+                            <div className="bg-gray-50 p-2.5 rounded-lg rounded-tl-none border border-gray-100 text-xs flex-1">
+                              <div className="flex justify-between items-start mb-1">
+                                <p className="font-semibold text-gray-600">{authorName}</p>
+                                <button 
+                                  onClick={() => toggleResolve(comment.id, comment.is_resolved)} 
+                                  className="text-[10px] text-gray-400 hover:text-gray-600 font-medium"
+                                >
+                                  Reopen
+                                </button>
+                              </div>
+                              <p className="text-gray-500 line-through">{comment.text}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             
             <div className="mt-4 flex flex-col gap-2 relative">
               {activePinCoordinates && (
