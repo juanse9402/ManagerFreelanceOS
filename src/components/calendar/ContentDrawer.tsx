@@ -340,7 +340,7 @@ export const ContentDrawer: React.FC<ContentDrawerProps> = ({ isOpen, onClose, i
               <div className="text-center py-4 text-xs text-gray-400">Loading comments...</div>
             ) : (
               <div className="space-y-4">
-                {openComments.map((comment, idx) => {
+                {openComments.map((comment) => {
                   const authorName = comment.user_id ? (authors[comment.user_id] || 'Agency Member') : 'Client (Quick Link)';
                   const initials = authorName[0].toUpperCase();
                   const dateStr = comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Just now';

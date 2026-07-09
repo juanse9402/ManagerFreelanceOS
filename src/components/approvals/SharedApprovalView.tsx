@@ -6,15 +6,12 @@ import {
   Monitor, 
   MessageSquare, 
   CheckCircle, 
-  Clock, 
-  X, 
   Mail, 
   Lock, 
   Loader2, 
   Send,
   AlertCircle,
-  HelpCircle,
-  Undo
+  HelpCircle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -174,7 +171,7 @@ export const SharedApprovalView: React.FC = () => {
 
       if (error) throw error;
       
-      setPost(prev => ({ ...prev, status: newStatus }));
+      setPost((prev: any) => ({ ...prev, status: newStatus }));
       setActionSuccess(newStatus === 'Approved' ? 'approved' : 'changes_requested');
       
       setTimeout(() => {
@@ -552,7 +549,7 @@ export const SharedApprovalView: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {openComments.map((comment, idx) => {
+                {openComments.map((comment) => {
                   const authorName = comment.user_id ? (authors[comment.user_id] || 'Miembro de la Agencia') : 'Tú (Cliente)';
                   const initials = authorName[0].toUpperCase();
                   const dateStr = comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Hace un momento';
