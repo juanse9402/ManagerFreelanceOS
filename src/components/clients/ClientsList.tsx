@@ -47,31 +47,11 @@ export const ClientsList: React.FC = () => {
 
   const handleDeleteClient = async (e: React.MouseEvent, clientId: string, clientName: string) => {
     e.stopPropagation();
-    if (window.confirm(`¿Estás seguro de que deseas eliminar al cliente "${clientName}" y todos sus datos asociados?`)) {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al cliente "${clientName}"?`)) {
       try {
-        // 1. Delete associated tasks
-        await supabase.from('tasks').delete().eq('client_id', clientId);
-
-        // 2. Delete associated projects
-        await supabase.from('projects').delete().eq('client_id', clientId);
-
-        // 3. Fetch content posts to delete their comments
-        const { data: posts } = await supabase.from('content_posts').select('id').eq('client_id', clientId);
-        if (posts && posts.length > 0) {
-          const postIds = posts.map(p => p.id);
-          await supabase.from('comments').delete().in('post_id', postIds);
-        }
-
-        // 4. Delete content posts
-        await supabase.from('content_posts').delete().eq('client_id', clientId);
-
-        // 5. Delete comments created by the client
-        await supabase.from('comments').delete().eq('user_id', clientId);
-
-        // 6. Finally, delete the client profile
         const { error } = await supabase
           .from('profiles')
-          .delete()
+          .update({ status: 'inactive' })
           .eq('id', clientId);
           
         if (!error) {
