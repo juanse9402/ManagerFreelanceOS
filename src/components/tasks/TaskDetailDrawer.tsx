@@ -11,9 +11,11 @@ interface TaskDetailDrawerProps {
 
 export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({ isOpen, onClose, task }) => {
   const { role } = useAuth();
-  const { getTaskEstimate, getTaskTimeLogged, timeEntries } = useTimeTracking();
+  const { getTaskEstimate, getTaskTimeLogged, timeEntries, getTaskRecurrence } = useTimeTracking();
 
   if (!isOpen || !task) return null;
+
+  const recurrenceDays = getTaskRecurrence(task.id);
 
   // Estimate calculations
   const estimate = getTaskEstimate(task.id);
@@ -87,6 +89,18 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({ isOpen, onCl
               {task.status}
             </span>
           </div>
+
+          {/* Recurrence Badge */}
+          {recurrenceDays.length > 0 && (
+            <div className="p-3 bg-purple-50/55 rounded-xl border border-purple-100 flex items-center justify-between">
+              <span className="text-xs text-purple-700 font-semibold flex items-center">
+                🔁 Recurrencia
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">
+                {recurrenceDays.join(', ')}
+              </span>
+            </div>
+          )}
 
           {/* Estimate Progress Bar */}
           {estimate && (

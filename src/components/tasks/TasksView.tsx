@@ -8,9 +8,11 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { TaskCard } from './TaskCard';
 import { supabase } from '../../lib/supabase';
 import { CreateTaskModal } from './CreateTaskModal';
+import { useTimeTracking } from '../../contexts/TimeTrackingContext';
 
 export const TasksView: React.FC = () => {
   const { activeClientId, role } = useAuth();
+  const { getTaskRecurrence } = useTimeTracking();
   
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
@@ -38,13 +40,34 @@ export const TasksView: React.FC = () => {
       .eq('client_id', activeClientId);
 
     if (data && !error) {
-      const mapped = data.map((t: any) => ({
-        ...t,
-        status: t.status === 'todo' ? 'To Do' :
-                t.status === 'in_progress' ? 'In Progress' :
-                t.status === 'review' ? 'In Review' :
-                t.status === 'needs_changes' ? 'Needs Changes' : 'Completed'
-      }));
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayDay = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+      
+      const mapped = [];
+      for (const t of data) {
+        const recurrence = getTaskRecurrence(t.id);
+        let currentStatus = t.status;
+        let currentDate = t.date;
+        
+        if (t.status === 'done' && recurrence.includes(todayDay) && t.date !== todayStr) {
+          currentStatus = 'todo';
+          currentDate = todayStr;
+          
+          await supabase
+            .from('tasks')
+            .update({ status: 'todo', date: todayStr })
+            .eq('id', t.id);
+        }
+        
+        mapped.push({
+          ...t,
+          status: currentStatus === 'todo' ? 'To Do' :
+                  currentStatus === 'in_progress' ? 'In Progress' :
+                  currentStatus === 'review' ? 'In Review' :
+                  currentStatus === 'needs_changes' ? 'Needs Changes' : 'Completed',
+          date: currentDate
+        });
+      }
       setTasks(mapped);
     }
   };

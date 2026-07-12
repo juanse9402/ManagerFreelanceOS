@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus, Target, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { Plus, Target, ChevronRight, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { useTimeTracking } from '../../contexts/TimeTrackingContext';
 
 export const CampaignsList: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { availableClients, role, activeClientId } = useAuth();
+  const { campaigns, deleteCampaign } = useTimeTracking();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'active' | 'past'>('active');
   
@@ -16,37 +18,6 @@ export const CampaignsList: React.FC = () => {
   if (!client && role === 'admin') {
     return <div className="p-8 text-center text-gray-500">Client not found</div>;
   }
-
-  // Placeholder campaigns data matching the prompt requirements
-  const campaigns = [
-    {
-      id: 'c1',
-      name: 'Summer Product Launch 2026',
-      status: 'active',
-      phase: 'Production',
-      coverUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=800&q=80',
-      totalDeliverables: 12,
-      pendingReview: 3
-    },
-    {
-      id: 'c2',
-      name: 'Q2 Brand Awareness',
-      status: 'active',
-      phase: 'Review',
-      coverUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80',
-      totalDeliverables: 5,
-      pendingReview: 2
-    },
-    {
-      id: 'c3',
-      name: 'Valentine\'s Special',
-      status: 'past',
-      phase: 'Publishing',
-      coverUrl: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80',
-      totalDeliverables: 8,
-      pendingReview: 0
-    }
-  ];
 
   const filteredCampaigns = campaigns.filter(c => c.status === filter);
 
@@ -122,7 +93,7 @@ export const CampaignsList: React.FC = () => {
           <div 
             key={campaign.id} 
             onClick={() => handleCampaignClick(campaign.id)}
-            className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all cursor-pointer flex flex-col"
+            className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all cursor-pointer flex flex-col relative"
           >
             <div className="h-40 w-full relative overflow-hidden bg-gray-100">
               {campaign.coverUrl ? (
@@ -140,6 +111,20 @@ export const CampaignsList: React.FC = () => {
                   {campaign.phase}
                 </span>
               </div>
+              {role === 'admin' && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`¿Estás seguro de que deseas eliminar la campaña "${campaign.name}"?`)) {
+                      deleteCampaign(campaign.id);
+                    }
+                  }}
+                  className="absolute top-3 right-3 p-1.5 rounded-md text-red-600 bg-white/90 hover:bg-red-50 hover:text-red-700 shadow-sm backdrop-blur-md transition-colors"
+                  title="Eliminar campaña"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
             
             <div className="p-5 flex flex-col flex-1">

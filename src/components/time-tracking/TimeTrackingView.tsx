@@ -3,8 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   useTimeTracking, 
   CATEGORIES, 
-  CATEGORY_COLORS, 
-  MOCK_CAMPAIGNS
+  CATEGORY_COLORS
 } from '../../contexts/TimeTrackingContext';
 import type { TimeEntry } from '../../contexts/TimeTrackingContext';
 import { 
@@ -52,7 +51,8 @@ export const TimeTrackingView: React.FC = () => {
     duplicateEntry,
     getClientSettings,
     saveClientSettings,
-    saveReport
+    saveReport,
+    campaigns
   } = useTimeTracking();
 
   // Selected client for view filter & timer pre-fill
@@ -83,7 +83,14 @@ export const TimeTrackingView: React.FC = () => {
 
   // Active Timer Input states
   const [timerDesc, setTimerDesc] = useState('');
-  const [timerCampaign, setTimerCampaign] = useState(MOCK_CAMPAIGNS[0].id);
+  const [timerCampaign, setTimerCampaign] = useState('');
+  
+  useEffect(() => {
+    if (campaigns.length > 0 && !timerCampaign) {
+      setTimerCampaign(campaigns[0].id);
+    }
+  }, [campaigns, timerCampaign]);
+
   const [timerTask, setTimerTask] = useState('');
   const [timerCategory, setTimerCategory] = useState(CATEGORIES[0]);
   const [timerBillable, setTimerBillable] = useState(true);
@@ -402,7 +409,7 @@ export const TimeTrackingView: React.FC = () => {
 
   // Calculate tasks completed from Supabase tasks state (status: done / Completed)
   const completedTasksCount = clientTasks.filter(t => t.status === 'done' || t.status === 'Completed').length;
-  const activeCampaignsCount = MOCK_CAMPAIGNS.filter(c => c.status === 'active').length;
+  const activeCampaignsCount = campaigns.filter(c => c.status === 'active').length;
 
   // Auto-generate narrative summary of work
   useEffect(() => {
@@ -465,6 +472,32 @@ export const TimeTrackingView: React.FC = () => {
   // Simulated reports outputs
   const handleCopyLink = () => {
     const mockReportId = `rep_${selectedClientId}_${currentWeekStart.toISOString().split('T')[0]}`;
+    
+    // Calculate actual hours per category
+    const categoryHours: Record<string, number> = {};
+    filteredEntries.forEach(entry => {
+      const duration = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+      categoryHours[entry.category] = (categoryHours[entry.category] || 0) + duration;
+    });
+
+    // Calculate detailed work with specific duration breakdown
+    const detailedWorkCompleted: Record<string, { description: string; durationMs: number }[]> = {};
+    filteredEntries.forEach(entry => {
+      if (!detailedWorkCompleted[entry.category]) {
+        detailedWorkCompleted[entry.category] = [];
+      }
+      const duration = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
+      const existing = detailedWorkCompleted[entry.category].find(item => item.description === entry.description);
+      if (existing) {
+        existing.durationMs += duration;
+      } else {
+        detailedWorkCompleted[entry.category].push({
+          description: entry.description || 'No description',
+          durationMs: duration
+        });
+      }
+    });
+
     const reportObj = {
       id: mockReportId,
       clientId: selectedClientId,
@@ -475,6 +508,8 @@ export const TimeTrackingView: React.FC = () => {
       tasksCount: completedTasksCount,
       narrative: narrativeSummary,
       workCompleted: editableWorkCompleted,
+      categoryHours,
+      detailedWorkCompleted,
       teamNotes,
       includeBillable,
       includeHoursDay,
@@ -624,7 +659,7 @@ export const TimeTrackingView: React.FC = () => {
                 }}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 text-gray-700 cursor-pointer font-medium"
               >
-                {MOCK_CAMPAIGNS.map(c => (
+                {campaigns.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
@@ -889,7 +924,7 @@ export const TimeTrackingView: React.FC = () => {
                                       {activeClientName.split(' ')[0]}
                                     </span>
                                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-600 truncate max-w-[120px]">
-                                      {MOCK_CAMPAIGNS.find(c => c.id === entry.campaignId)?.name || 'Campaign'}
+                                      {campaigns.find(c => c.id === entry.campaignId)?.name || 'Campaign'}
                                     </span>
                                     {entry.taskId && (
                                       <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-50 border border-gray-200/80 text-gray-500 flex items-center">

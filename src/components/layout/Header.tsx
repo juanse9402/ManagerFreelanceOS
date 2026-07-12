@@ -4,7 +4,7 @@ import { Bell, Search, LogOut, X, Play, Square } from 'lucide-react';
 import type { UserRole } from '../../App';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTimeTracking, CATEGORIES, MOCK_CAMPAIGNS } from '../../contexts/TimeTrackingContext';
+import { useTimeTracking, CATEGORIES } from '../../contexts/TimeTrackingContext';
 
 interface HeaderProps {
   role: UserRole;
@@ -18,15 +18,21 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
   const activeClient = availableClients.find((c: any) => c.id === activeClientId);
 
   // Time tracking hooks and states
-  const { activeTimer, startTimer, stopTimer, updateActiveTimer } = useTimeTracking();
+  const { activeTimer, startTimer, stopTimer, updateActiveTimer, campaigns } = useTimeTracking();
   const [showTimerPopover, setShowTimerPopover] = useState(false);
   const [elapsed, setElapsed] = useState('0:00:00');
   
   // Ticker fields
   const [desc, setDesc] = useState('');
   const [clientVal, setClientVal] = useState('');
-  const [campaignVal, setCampaignVal] = useState(MOCK_CAMPAIGNS[0].id);
+  const [campaignVal, setCampaignVal] = useState('');
   const [categoryVal, setCategoryVal] = useState(CATEGORIES[0]);
+
+  useEffect(() => {
+    if (campaigns.length > 0 && !campaignVal) {
+      setCampaignVal(campaigns[0].id);
+    }
+  }, [campaigns, campaignVal]);
 
   // Sync state when timer changes
   useEffect(() => {
@@ -207,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ role }) => {
                         }}
                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none"
                       >
-                        {MOCK_CAMPAIGNS.map(c => (
+                        {campaigns.map((c: any) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>

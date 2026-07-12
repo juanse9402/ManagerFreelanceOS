@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import { 
   X, 
   User, 
   Palette, 
-  Mail, 
   ArrowRight,
   Loader2,
   Camera,
@@ -19,14 +17,12 @@ interface ClientCreationDrawerProps {
 }
 
 export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { profileName } = useAuth();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
   // Step 1: Details
   const [clientName, setClientName] = useState('');
-  const [clientEmail, setClientEmail] = useState('');
   
   // Step 2: Brand
   const [primaryColor, setPrimaryColor] = useState('#6366f1');
@@ -52,7 +48,7 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
       const { data: newProfile, error: profileError } = await supabase.from('profiles').insert({
         full_name: clientName,
         role: 'client',
-        status: 'pending',
+        status: 'approved',
         primary_color: primaryColor,
         accent_color: accentColor
       }).select('id').single();
@@ -73,16 +69,12 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
         }
       }
 
-      // In a real app, here we would trigger the Supabase invite email.
-      // We will mock it by just assuming it was sent.
-
       onSuccess();
       onClose();
       // Reset state
       setTimeout(() => {
         setStep(1);
         setClientName('');
-        setClientEmail('');
         setLogoPreview(null);
         setLogo(null);
       }, 300);
@@ -114,7 +106,6 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
         <div className="px-6 py-4 border-b border-gray-50 flex gap-2">
           <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-[var(--brand-primary)]' : 'bg-gray-100'}`} />
           <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-[var(--brand-primary)]' : 'bg-gray-100'}`} />
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 3 ? 'bg-[var(--brand-primary)]' : 'bg-gray-100'}`} />
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -138,17 +129,6 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
                   onChange={(e) => setClientName(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)]"
                   placeholder="e.g. Burger King"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)]"
-                  placeholder="client@example.com"
                 />
               </div>
             </div>
@@ -223,43 +203,6 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
               </div>
             </div>
           )}
-
-          {step === 3 && (
-            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-                  <Mail size={20} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Review & Send</h3>
-                  <p className="text-sm text-gray-500">Preview the invitation email</p>
-                </div>
-              </div>
-
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 text-sm">
-                  <div className="mb-1"><span className="text-gray-500">To:</span> {clientEmail}</div>
-                  <div><span className="text-gray-500">Subject:</span> You've been invited to Manager OS by {profileName}</div>
-                </div>
-                <div className="p-6 bg-white text-sm text-gray-700 space-y-4">
-                  <p>Hi {clientName},</p>
-                  <p>{profileName} has invited you to collaborate on Manager OS.</p>
-                  <p>Here you will be able to review, comment on, and approve all your social media content seamlessly.</p>
-                  
-                  <div className="pt-4 pb-2">
-                    <div 
-                      className="inline-block px-6 py-2.5 rounded-lg text-white font-medium cursor-pointer"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      Accept Invitation
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-500 text-xs">If you have any questions, please reply to this email.</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
@@ -272,10 +215,10 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
             </button>
           )}
           
-          {step < 3 ? (
+          {step < 2 ? (
             <button 
               onClick={() => setStep(step + 1)}
-              disabled={step === 1 && (!clientName || !clientEmail)}
+              disabled={step === 1 && !clientName}
               className="flex-[2] px-4 py-2.5 bg-black text-white font-medium rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center justify-center"
             >
               Next Step <ArrowRight size={16} className="ml-2" />
@@ -287,7 +230,7 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
               className="flex-[2] px-4 py-2.5 bg-[var(--brand-primary)] text-white font-medium rounded-xl hover:opacity-90 disabled:opacity-50 transition-colors flex items-center justify-center"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                <>{'Send Invitation'} <CheckCircle size={16} className="ml-2" /></>
+                <>{'Create Client'} <CheckCircle size={16} className="ml-2" /></>
               )}
             </button>
           )}

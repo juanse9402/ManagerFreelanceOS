@@ -3,8 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   useTimeTracking, 
   CATEGORIES, 
-  CATEGORY_COLORS, 
-  MOCK_CAMPAIGNS
+  CATEGORY_COLORS
 } from '../../contexts/TimeTrackingContext';
 import { 
   Clock, 
@@ -29,7 +28,8 @@ export const ClientHoursView: React.FC = () => {
     activeTimer,
     timeEntries,
     getClientSettings,
-    reports
+    reports,
+    campaigns
   } = useTimeTracking();
 
   const clientId = user?.id || '';
@@ -183,7 +183,7 @@ export const ClientHoursView: React.FC = () => {
   }
 
   const topCampaignId = Object.keys(campaignTotals).sort((a,b) => campaignTotals[b] - campaignTotals[a])[0];
-  const topCampaignName = MOCK_CAMPAIGNS.find(c => c.id === topCampaignId)?.name || 'N/A';
+  const topCampaignName = campaigns.find(c => c.id === topCampaignId)?.name || 'N/A';
 
   // Top category
   const categoryTotals: Record<string, number> = {};

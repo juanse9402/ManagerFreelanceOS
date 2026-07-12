@@ -54,16 +54,26 @@ export const PublicReportView: React.FC = () => {
     );
   }
 
+  const formatMs = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${mins}m`;
+  };
+
   // Calculate decimal hours and format times
   const categoryData = Object.keys(report.workCompleted || {}).map(cat => {
-    // Generate allocation from category share
-    const count = report.workCompleted[cat]?.length || 0;
+    let value = 0;
+    if (report.categoryHours && report.categoryHours[cat] !== undefined) {
+      value = report.categoryHours[cat] / (1000 * 60 * 60); // convert ms to decimal hours
+    } else {
+      value = report.workCompleted[cat]?.length || 0;
+    }
     return {
       name: cat,
-      value: count, // use count or assign values based on listings
+      value: value,
       color: CATEGORY_COLORS[cat]?.hex || '#9CA3AF'
     };
-  });
+  }).filter(item => item.value > 0);
 
   const primaryColor = '#8B5CF6'; // Default brand fallback
 
@@ -185,16 +195,33 @@ export const PublicReportView: React.FC = () => {
                   const list = report.workCompleted[cat] || [];
                   if (list.length === 0) return null;
 
+                  const catDurationMs = report.categoryHours ? (report.categoryHours[cat] || 0) : 0;
+
                   return (
                     <div key={cat} className="space-y-1.5 bg-white p-4 rounded-xl border border-gray-100">
-                      <div className="flex items-center space-x-2 border-b border-gray-50 pb-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat]?.hex || '#9CA3AF' }} />
-                        <span className="text-xs font-bold text-gray-800">{cat}</span>
+                      <div className="flex items-center justify-between border-b border-gray-50 pb-1.5">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[cat]?.hex || '#9CA3AF' }} />
+                          <span className="text-xs font-bold text-gray-800">{cat}</span>
+                        </div>
+                        {catDurationMs > 0 && (
+                          <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">
+                            {formatMs(catDurationMs)}
+                          </span>
+                        )}
                       </div>
                       <ul className="list-disc pl-5 space-y-1">
-                        {list.map((desc: string, idx: number) => (
-                          <li key={idx} className="text-xs text-gray-600 font-medium">{desc}</li>
-                        ))}
+                        {list.map((desc: string, idx: number) => {
+                          const details = report.detailedWorkCompleted && report.detailedWorkCompleted[cat]
+                            ? report.detailedWorkCompleted[cat].find((item: any) => item.description === desc)
+                            : null;
+                          const durationStr = details && details.durationMs > 0 ? ` (${formatMs(details.durationMs)})` : '';
+                          return (
+                            <li key={idx} className="text-xs text-gray-600 font-medium">
+                              {desc}{durationStr}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   );

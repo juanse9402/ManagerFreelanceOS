@@ -26,8 +26,10 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const { role } = useAuth();
-  const { activeTimer, startTimer, stopTimer, getTaskTimeLogged, getTaskEstimate } = useTimeTracking();
+  const { activeTimer, startTimer, stopTimer, getTaskTimeLogged, getTaskEstimate, getTaskRecurrence } = useTimeTracking();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  
+  const recurrenceDays = getTaskRecurrence(task.id);
 
   const {
     attributes,
@@ -139,6 +141,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getPriorityColor(task.category)}`}>
             {task.category || 'General'}
           </span>
+          
+          {recurrenceDays.length > 0 && (
+            <span className="flex items-center text-[10px] text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100" title={`Se repite los días: ${recurrenceDays.join(', ')}`}>
+              🔁 {recurrenceDays.join(', ')}
+            </span>
+          )}
           
           {role === 'admin' && (
             <span className="flex items-center text-[10px] text-gray-400 font-medium ml-auto" title={isClientVisible ? "Client can see this task" : "Hidden from client"}>

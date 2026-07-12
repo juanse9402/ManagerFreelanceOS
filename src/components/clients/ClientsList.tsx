@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
@@ -42,6 +42,27 @@ export const ClientsList: React.FC = () => {
       console.error('Error approving client:', error);
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleDeleteClient = async (e: React.MouseEvent, clientId: string, clientName: string) => {
+    e.stopPropagation();
+    if (window.confirm(`¿Estás seguro de que deseas eliminar al cliente "${clientName}" y todos sus datos asociados?`)) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', clientId);
+          
+        if (!error) {
+          await fetchAvailableClients();
+          await fetchPendingClients();
+        } else {
+          alert('Error al eliminar cliente: ' + error.message);
+        }
+      } catch (err: any) {
+        console.error('Error deleting client:', err);
+      }
     }
   };
 
@@ -94,10 +115,14 @@ export const ClientsList: React.FC = () => {
                    }}>
                 {client.full_name?.substring(0, 2).toUpperCase()}
               </div>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 items-center">
                 <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-100">Active</span>
-                <button className="text-gray-400 hover:text-gray-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); /* 3-dot menu logic */ }}>
-                  ⋮
+                <button 
+                  className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity" 
+                  onClick={(e) => handleDeleteClient(e, client.id, client.full_name)}
+                  title="Eliminar cliente"
+                >
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>

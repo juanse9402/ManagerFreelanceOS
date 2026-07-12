@@ -93,6 +93,11 @@ interface TimeTrackingContextType {
   getTaskTimeLogged: (taskId: string) => number; // milliseconds
   reports: any[];
   saveReport: (report: any) => void;
+  campaigns: any[];
+  deleteCampaign: (id: string) => void;
+  taskRecurrences: Record<string, string[]>;
+  saveTaskRecurrence: (taskId: string, days: string[]) => void;
+  getTaskRecurrence: (taskId: string) => string[];
 }
 
 const TimeTrackingContext = createContext<TimeTrackingContextType | undefined>(undefined);
@@ -105,6 +110,8 @@ export const TimeTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [clientSettings, setClientSettings] = useState<Record<string, ClientTimeSettings>>({});
   const [taskEstimates, setTaskEstimates] = useState<Record<string, TaskEstimate>>({});
   const [reports, setReports] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [taskRecurrences, setTaskRecurrences] = useState<Record<string, string[]>>({});
 
   // Load from localStorage on mount/user change
   useEffect(() => {
@@ -125,6 +132,16 @@ export const TimeTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       const storedReports = localStorage.getItem(`${keyPrefix}reports`);
       if (storedReports) setReports(JSON.parse(storedReports));
+
+      const storedCampaigns = localStorage.getItem(`${keyPrefix}campaigns`);
+      if (storedCampaigns) {
+        setCampaigns(JSON.parse(storedCampaigns));
+      } else {
+        setCampaigns(MOCK_CAMPAIGNS);
+      }
+
+      const storedRecurrences = localStorage.getItem(`${keyPrefix}task_recurrences`);
+      if (storedRecurrences) setTaskRecurrences(JSON.parse(storedRecurrences));
     } catch (e) {
       console.error('Error loading time tracking data from localStorage', e);
     }
@@ -278,6 +295,22 @@ export const TimeTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
     persist('reports', updated);
   };
 
+  const deleteCampaign = (id: string) => {
+    const updated = campaigns.filter(c => c.id !== id);
+    setCampaigns(updated);
+    persist('campaigns', updated);
+  };
+
+  const saveTaskRecurrence = (taskId: string, days: string[]) => {
+    const updated = { ...taskRecurrences, [taskId]: days };
+    setTaskRecurrences(updated);
+    persist('task_recurrences', updated);
+  };
+
+  const getTaskRecurrence = (taskId: string): string[] => {
+    return taskRecurrences[taskId] || [];
+  };
+
   return (
     <TimeTrackingContext.Provider value={{
       activeTimer,
@@ -299,7 +332,12 @@ export const TimeTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
       getTasksWithTimeLogged,
       getTaskTimeLogged,
       reports,
-      saveReport
+      saveReport,
+      campaigns,
+      deleteCampaign,
+      taskRecurrences,
+      saveTaskRecurrence,
+      getTaskRecurrence
     }}>
       {children}
     </TimeTrackingContext.Provider>

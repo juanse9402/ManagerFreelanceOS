@@ -23,9 +23,27 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   const [loading, setLoading] = useState(false);
 
   // Task estimate fields
-  const { saveTaskEstimate } = useTimeTracking();
+  const { saveTaskEstimate, saveTaskRecurrence } = useTimeTracking();
   const [estimatedTimeValue, setEstimatedTimeValue] = useState('');
   const [estimatedTimeUnit, setEstimatedTimeUnit] = useState<'hours' | 'minutes'>('hours');
+
+  // Recurrence fields
+  const [recurrenceDays, setRecurrenceDays] = useState<string[]>([]);
+  const WEEKDAYS = [
+    { key: 'Mon', label: 'L' },
+    { key: 'Tue', label: 'M' },
+    { key: 'Wed', label: 'X' },
+    { key: 'Thu', label: 'J' },
+    { key: 'Fri', label: 'V' },
+    { key: 'Sat', label: 'S' },
+    { key: 'Sun', label: 'D' }
+  ];
+
+  const toggleRecurrenceDay = (day: string) => {
+    setRecurrenceDays(prev => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+  };
 
   if (!isOpen) return null;
 
@@ -69,14 +87,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     // Chain select() to retrieve the generated task ID
     const { data, error } = await supabase.from('tasks').insert([newTask]).select();
     
-    setLoading(false);
+    setLoading(true);
     
     if (!error) {
-      if (data && data.length > 0 && estimatedTimeValue) {
-        saveTaskEstimate(data[0].id, {
-          value: Number(estimatedTimeValue),
-          unit: estimatedTimeUnit
-        });
+      if (data && data.length > 0) {
+        const generatedTaskId = data[0].id;
+        if (estimatedTimeValue) {
+          saveTaskEstimate(generatedTaskId, {
+            value: Number(estimatedTimeValue),
+            unit: estimatedTimeUnit
+          });
+        }
+        if (recurrenceDays.length > 0) {
+          saveTaskRecurrence(generatedTaskId, recurrenceDays);
+        }
       }
       
       setTitle('');
@@ -86,6 +110,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       setVisibility('admin_only');
       setAttachment(null);
       setEstimatedTimeValue('');
+      setRecurrenceDays([]);
       onSave();
       onClose();
     } else {
@@ -175,6 +200,34 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
                   <option value="minutes">Minutes</option>
                 </select>
               </div>
+            </div>
+
+            {/* Recurrencia */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                🔁 ¿Se repite esta actividad?
+              </label>
+              <div className="flex gap-2">
+                {WEEKDAYS.map(day => {
+                  const isSelected = recurrenceDays.includes(day.key);
+                  return (
+                    <button
+                      key={day.key}
+                      type="button"
+                      onClick={() => toggleRecurrenceDay(day.key)}
+                      className={`w-9 h-9 rounded-xl font-bold text-xs flex items-center justify-center border transition-all ${
+                        isSelected 
+                          ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white shadow-sm' 
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                      title={day.key}
+                    >
+                      {day.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-1.5">Selecciona los días en que se repite esta tarea para reiniciarla automáticamente.</p>
             </div>
 
             {/* Descripción */}
