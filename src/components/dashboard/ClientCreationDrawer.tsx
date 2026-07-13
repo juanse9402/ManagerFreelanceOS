@@ -30,6 +30,8 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
   const [logo, setLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -40,12 +42,14 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
 
   const handleCreate = async () => {
     setLoading(true);
+    setError(null);
     try {
       // 1. Create client profile
       // Typically we use inviteUserByEmail for Supabase Auth, but we might not have admin rights
       // If we don't, we insert directly to profiles to "mock" the client creation
       
       const { data: newProfile, error: profileError } = await supabase.from('profiles').insert({
+        id: crypto.randomUUID(), // Generate a UUID if the database doesn't default one
         full_name: clientName,
         role: 'client',
         status: 'approved',
@@ -77,9 +81,11 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
         setClientName('');
         setLogoPreview(null);
         setLogo(null);
+        setError(null);
       }, 300);
-    } catch (error) {
-      console.error('Error creating client:', error);
+    } catch (err: any) {
+      console.error('Error creating client:', err);
+      setError(err.message || 'Ocurrió un error al crear el cliente. Por favor, inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -109,6 +115,18 @@ export const ClientCreationDrawer: React.FC<ClientCreationDrawerProps> = ({ isOp
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-2 animate-in fade-in duration-300">
+              <span className="flex-1">{error}</span>
+              <button 
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-650 transition-colors font-bold"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {step === 1 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="flex items-center gap-3 mb-6">
