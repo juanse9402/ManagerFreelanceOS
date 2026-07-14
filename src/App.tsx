@@ -28,7 +28,7 @@ import { useState, useEffect } from 'react';
 export type UserRole = 'admin' | 'client';
 
 function AuthenticatedApp() {
-  const { role, hasCompletedOrientation, fetchAvailableClients, availableClients, activeClientId } = useAuth();
+  const { role, hasCompletedOrientation, fetchAvailableClients, availableClients, activeClientId, setActiveClientId } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false);
@@ -38,6 +38,23 @@ function AuthenticatedApp() {
     window.addEventListener('open-client-drawer', handleOpenDrawer);
     return () => window.removeEventListener('open-client-drawer', handleOpenDrawer);
   }, []);
+
+  // Synchronize activeClientId with URL if viewing a client-specific route
+  useEffect(() => {
+    if (role === 'admin') {
+      const pathParts = location.pathname.split('/');
+      // e.g., /admin/clients/:id/...
+      if (pathParts[1] === 'admin' && pathParts[2] === 'clients' && pathParts[3]) {
+        const urlClientId = pathParts[3];
+        if (urlClientId && urlClientId !== 'new' && urlClientId !== activeClientId) {
+          const isValid = availableClients.some(c => c.id === urlClientId);
+          if (isValid) {
+            setActiveClientId(urlClientId);
+          }
+        }
+      }
+    }
+  }, [location.pathname, role, activeClientId, availableClients, setActiveClientId]);
 
   // First-time Login Logic: If no clients exist, default to /admin/clients
   useEffect(() => {

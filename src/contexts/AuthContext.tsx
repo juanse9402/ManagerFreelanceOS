@@ -55,9 +55,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   // Workspace State
-  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [activeClientId, setActiveClientIdState] = useState<string | null>(() => {
+    return localStorage.getItem('active_client_id');
+  });
   const [availableClients, setAvailableClients] = useState<any[]>([]);
   const [clientProfile, setClientProfile] = useState<any | null>(null);
+
+  const setActiveClientId = (id: string | null) => {
+    if (id) {
+      localStorage.setItem('active_client_id', id);
+    } else {
+      localStorage.removeItem('active_client_id');
+    }
+    setActiveClientIdState(id);
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -99,8 +110,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     if (data && !error) {
       setAvailableClients(data);
-      if (!activeClientId && data.length > 0) {
-        setActiveClientId(data[0].id);
+      const storedClientId = localStorage.getItem('active_client_id');
+      const isValidStored = storedClientId && data.some(c => c.id === storedClientId);
+      
+      if (isValidStored) {
+        setActiveClientIdState(storedClientId);
+      } else if (!activeClientId && data.length > 0) {
+        setActiveClientIdState(data[0].id);
+        localStorage.setItem('active_client_id', data[0].id);
       }
     }
   };
