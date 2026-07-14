@@ -15,7 +15,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
   
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('General');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
   const [visibility, setVisibility] = useState<'admin_only' | 'client_visible'>('admin_only');
@@ -75,7 +75,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     const newTask = {
       title,
       category,
-      date,
+      date: date || null,
       status: 'todo',
       client_id: activeClientId,
       description,
@@ -105,6 +105,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       
       setTitle('');
       setCategory('General');
+      setDate('');
       setDescription('');
       setInternalNotes('');
       setVisibility('admin_only');
@@ -166,13 +167,15 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
 
             {/* Fecha */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fecha límite (Date)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex justify-between">
+                <span>Fecha límite (Date)</span>
+                <span className="text-xs text-gray-400 font-normal">Opcional</span>
+              </label>
               <input 
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition-all"
-                required
               />
             </div>
 
