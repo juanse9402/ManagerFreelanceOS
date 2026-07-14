@@ -87,8 +87,6 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
     // Chain select() to retrieve the generated task ID
     const { data, error } = await supabase.from('tasks').insert([newTask]).select();
     
-    setLoading(true);
-    
     if (!error) {
       if (data && data.length > 0) {
         const generatedTaskId = data[0].id;
@@ -112,11 +110,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClos
       setAttachment(null);
       setEstimatedTimeValue('');
       setRecurrenceDays([]);
+      setLoading(false);
       onSave();
       onClose();
     } else {
       alert(`Error al crear la tarea: ${error.message || JSON.stringify(error)}`);
       console.error('Insert Error:', error);
+      setLoading(false);
     }
   };
 
